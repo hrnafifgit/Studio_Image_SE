@@ -1212,6 +1212,6 @@
 
     <!-- Realtime WebSocket & Photoshop Core Engine -->
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-    <script src="js/app.js"></script>
+    <script src="{{ asset('js/app.js') }}?v={{ time() }}"></script>
 </body>
 </html>

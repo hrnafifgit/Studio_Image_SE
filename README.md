@@ -1,58 +1,61 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# VisionCraft Photoshop Studio
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+تم إعادة هيكلة هذا المشروع ليتبع أفضل ممارسات هندسة البرمجيات بحيث يتكون من:
+1. **الواجهة الأمامية ومعالجة المسارات (Laravel 11)**: يقوم بخدمة الواجهة الأمامية ويوفر نقطة اتصال وسيطة (API Proxy).
+2. **محرك معالجة الصور (Python Flask)**: يعمل كخدمة مصغرة (Microservice) لمعالجة الصور بخوارزميات متقدمة.
 
-## About Laravel
+## 🛠️ متطلبات التشغيل (للفريق)
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- PHP 8.2+ و Composer (يفضل استخدام Laravel Herd على الويندوز).
+- Python 3.10+
+- بيئة وهمية (Virtual Environment) لبايثون.
+- Node.js & NPM (لتطوير الواجهة الأمامية إن لزم الأمر).
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 🚀 طريقة التشغيل في بيئة التطوير (Development)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+لكي يعمل النظام بشكل متكامل، يجب تشغيل الخدمتين معاً:
 
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
+### 1. تشغيل محرك بايثون (Python Engine)
+افتح نافذة موجه أوامر (Terminal) جديدة، وانتقل لمجلد المشروع، ثم نفذ:
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+cd python_engine
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+python app/server.py
 ```
+> سيتم تشغيل المحرك على المنفذ `5001` (`http://127.0.0.1:5001`).
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+### 2. تشغيل سيرفر لارافل (Laravel Server)
+افتح نافذة موجه أوامر (Terminal) أخرى في المسار الرئيسي للمشروع، ونفذ:
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan serve
+```
+> سيتم تشغيل واجهة الموقع على المنفذ `8000` (`http://127.0.0.1:8000`).
+> لارافل سيقوم بتمرير جميع طلبات المعالجة (`/api/process`) إلى محرك بايثون خلف الكواليس.
 
-## Contributing
+## 👥 آلية العمل الجماعي (Team Workflow)
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+- **الفروع (Branches):** يجب على كل عضو في الفريق (4 أعضاء) إنشاء فرع خاص بمهمته قبل البدء بالتطوير (مثال: `feature/ui-improvements` أو `fix/image-crop`).
+- **لوحة المهام (Kanban):** يُفضل استخدام Trello أو GitHub Projects لتتبع المهام (To Do, In Progress, Review, Done).
+- **الدمج (Merge):** لا تقم بالدمج مباشرة إلى الـ `main`. قم بعمل Pull Request (PR) ليقوم زميل آخر بمراجعة الكود.
 
-## Code of Conduct
+## 📁 هيكلة المشروع (Architecture)
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```text
+/
+├── app/Http/Controllers/ImageProcessingController.php  <-- المتحكم الخاص بربط لارافل مع بايثون
+├── public/                  <-- ملفات الـ Assets (js, css, images)
+├── python_engine/           <-- مجلد الخدمة المصغرة (Python Microservice)
+│   ├── app/server.py        <-- ملف التشغيل للخدمة المصغرة
+│   ├── core/                <-- خوارزميات معالجة الصور
+│   └── requirements.txt
+├── resources/views/         <-- واجهات Blade (مثل welcome.blade.php)
+├── routes/
+│   ├── api.php              <-- مسارات الـ API التي تنادي ImageProcessingController
+│   └── web.php              <-- مسار الويب الرئيسي
+└── ...
+```

@@ -6,9 +6,14 @@ import cv2
 import numpy as np
 from flask import Flask, request, jsonify, send_from_directory
 from flask_socketio import SocketIO, emit
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import core
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 
 # Disable caching for rapid development
@@ -291,5 +296,5 @@ def handle_ws_process_frame(data):
         emit("error", {"status": "error", "message": str(e)})
 
 if __name__ == "__main__":
-    socketio.run(app, host="127.0.0.1", port=5000, debug=True)
+    socketio.run(app, host="127.0.0.1", port=5001, debug=True, allow_unsafe_werkzeug=True)
 

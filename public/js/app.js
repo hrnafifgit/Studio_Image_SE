@@ -1165,7 +1165,7 @@ class PhotoshopApp {
         this.notchModal.style.display = "flex";
 
         try {
-            const resp = await fetch("/api/process", {
+            const resp = await fetch("http://127.0.0.1:5001/api/process", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ image: this.rawImageBase64, operation: "fft_spectrum" })
@@ -1303,7 +1303,7 @@ class PhotoshopApp {
                 params: this.activeParams
             };
 
-            const response = await fetch("/api/process", {
+            const response = await fetch("http://127.0.0.1:5001/api/process", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload)
@@ -1443,7 +1443,7 @@ class PhotoshopApp {
         this.showToast("Rendering TrueType typography...", "🔤");
 
         try {
-            const resp = await fetch("/api/process", {
+            const resp = await fetch("http://127.0.0.1:5001/api/process", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -1477,7 +1477,7 @@ class PhotoshopApp {
         this.showToast("Extracting Subject with GrabCut AI...", "✂️");
 
         try {
-            const resp = await fetch("/api/process", {
+            const resp = await fetch("http://127.0.0.1:5001/api/process", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -1522,7 +1522,7 @@ class PhotoshopApp {
         this.showToast(`Replacing Background (${type})...`, "🌅");
 
         try {
-            const resp = await fetch("/api/process", {
+            const resp = await fetch("http://127.0.0.1:5001/api/process", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -1594,7 +1594,7 @@ class PhotoshopApp {
         this.showToast("Merging Overlay Image...", "🖼");
 
         try {
-            const resp = await fetch("/api/process", {
+            const resp = await fetch("http://127.0.0.1:5001/api/process", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -1642,15 +1642,33 @@ class PhotoshopApp {
         if (!file) return;
         const reader = new FileReader();
         reader.onload = (event) => {
-            this.blendSecondImageBase64 = event.target.result;
-            if (this.blendThumb2) {
-                this.blendThumb2.src = this.blendSecondImageBase64;
-                this.blendThumb2.style.display = "block";
-            }
-            if (this.blendThumb2Placeholder) {
-                this.blendThumb2Placeholder.style.display = "none";
-            }
-            this.showToast("Second image loaded for blending", "🖼️");
+            const img = new Image();
+            img.onload = () => {
+                const maxDim = 1000;
+                let w = img.width;
+                let h = img.height;
+                if (w > maxDim || h > maxDim) {
+                    const ratio = Math.min(maxDim / w, maxDim / h);
+                    w = Math.round(w * ratio);
+                    h = Math.round(h * ratio);
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = w;
+                canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, w, h);
+                
+                this.blendSecondImageBase64 = canvas.toDataURL('image/jpeg', 0.9);
+                if (this.blendThumb2) {
+                    this.blendThumb2.src = this.blendSecondImageBase64;
+                    this.blendThumb2.style.display = "block";
+                }
+                if (this.blendThumb2Placeholder) {
+                    this.blendThumb2Placeholder.style.display = "none";
+                }
+                this.showToast("Second image loaded for blending", "🖼️");
+            };
+            img.src = event.target.result;
         };
         reader.readAsDataURL(file);
     }
@@ -1675,7 +1693,7 @@ class PhotoshopApp {
 
         const mode = this.blendAlgorithmSelect ? this.blendAlgorithmSelect.value : "linear";
         try {
-            const resp = await fetch("/api/process", {
+            const resp = await fetch("http://127.0.0.1:5001/api/process", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -1780,9 +1798,28 @@ class PhotoshopApp {
         if (!file) return;
         const reader = new FileReader();
         reader.onload = (event) => {
-            this.collageSlotImages[this.collageActiveSlotIndex] = event.target.result;
-            this.renderCollageSlots();
-            this.showToast(`Loaded image for Slot ${this.collageActiveSlotIndex + 1}`, "🖼️");
+            const img = new Image();
+            img.onload = () => {
+                const maxDim = 1000; 
+                let w = img.width;
+                let h = img.height;
+                if (w > maxDim || h > maxDim) {
+                    const ratio = Math.min(maxDim / w, maxDim / h);
+                    w = Math.round(w * ratio);
+                    h = Math.round(h * ratio);
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = w;
+                canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, w, h);
+                
+                // Use JPEG 0.9 to greatly reduce base64 size and prevent PHP POST max_size errors
+                this.collageSlotImages[this.collageActiveSlotIndex] = canvas.toDataURL('image/jpeg', 0.9);
+                this.renderCollageSlots();
+                this.showToast(`Loaded image for Slot ${this.collageActiveSlotIndex + 1}`, "🖼️");
+            };
+            img.src = event.target.result;
         };
         reader.readAsDataURL(file);
         e.target.value = "";
@@ -1814,7 +1851,7 @@ class PhotoshopApp {
         this.showToast("Generating Photo Collage...", "📐");
 
         try {
-            const resp = await fetch("/api/process", {
+            const resp = await fetch("http://127.0.0.1:5001/api/process", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -1941,7 +1978,7 @@ class PhotoshopApp {
         this.showToast("Applying Crop...", "✂️");
 
         try {
-            const resp = await fetch("/api/process", {
+            const resp = await fetch("http://127.0.0.1:5001/api/process", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -2320,7 +2357,7 @@ class PhotoshopApp {
             bgCtx.drawImage(bgImg, 0, 0);
             const bgBase64 = bgCanvas.toDataURL("image/jpeg", 0.95);
 
-            const resp = await fetch("/api/process", {
+            const resp = await fetch("http://127.0.0.1:5001/api/process", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
