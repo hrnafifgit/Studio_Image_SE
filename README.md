@@ -1,6 +1,14 @@
-# VisionCraft Photoshop Studio
+# VisionCraft - Digital Image Processing (DIP) Studio
 
-تم إعادة هيكلة هذا المشروع ليتبع أفضل ممارسات هندسة البرمجيات بحيث يتكون من:
+![CI Workflow](https://github.com/hrnafifgit/Studio_Image_SE/actions/workflows/ci.yml/badge.svg)
+![Laravel](https://img.shields.io/badge/Laravel-11-FF2D20?style=flat&logo=laravel&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat&logo=python&logoColor=white)
+![OpenCV](https://img.shields.io/badge/OpenCV-4.8+-5C3EE8?style=flat&logo=opencv&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green.svg)
+![Architecture](https://img.shields.io/badge/Architecture-Microservices-blue)
+
+تم بناء وهيكلة هذا المشروع ليتبع أفضل ممارسات هندسة البرمجيات (Software Engineering Best Practices) وفق معمارية الخدمات المصغرة (Microservices Architecture) المكونة من:
+
 1. **الواجهة الأمامية ومعالجة المسارات (Laravel 11)**: يقوم بخدمة الواجهة الأمامية ويوفر نقطة اتصال وسيطة (API Proxy).
 2. **محرك معالجة الصور (Python Flask)**: يعمل كخدمة مصغرة (Microservice) لمعالجة الصور بخوارزميات متقدمة.
 
