@@ -1,1 +1,0 @@
-# VisionCraft Web Application Package
