@@ -1,69 +1,105 @@
-# VisionCraft - Digital Image Processing (DIP) Studio
+# 🐝 VisionCraft - Digital Image Processing (DIP) Studio & AR Mirror
 
 ![CI Workflow](https://github.com/hrnafifgit/Studio_Image_SE/actions/workflows/ci.yml/badge.svg)
 ![Laravel](https://img.shields.io/badge/Laravel-11-FF2D20?style=flat&logo=laravel&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat&logo=python&logoColor=white)
 ![OpenCV](https://img.shields.io/badge/OpenCV-4.8+-5C3EE8?style=flat&logo=opencv&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-green.svg)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 ![Architecture](https://img.shields.io/badge/Architecture-Microservices-blue)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 
-تم بناء وهيكلة هذا المشروع ليتبع أفضل ممارسات هندسة البرمجيات (Software Engineering Best Practices) وفق معمارية الخدمات المصغرة (Microservices Architecture) المكونة من:
+---
 
-1. **الواجهة الأمامية ومعالجة المسارات (Laravel 11)**: يقوم بخدمة الواجهة الأمامية ويوفر نقطة اتصال وسيطة (API Proxy).
-2. **محرك معالجة الصور (Python Flask)**: يعمل كخدمة مصغرة (Microservice) لمعالجة الصور بخوارزميات متقدمة.
+## 📖 وصف المشروع (Project Description)
+**VisionCraft DIP Studio** هو استوديو ويب تفاعلي متقدم يحاكي برنامج أدوبي فوتوشوب (Photoshop Pro)، مخصص لحسابات ومعالجة الصور الرقمية (Digital Image Processing - DIP) وتقنيات الواقع المعزز (AR Mirror).
 
-## 🛠️ متطلبات التشغيل (للفريق)
+تم تصميم النظام وبناؤه وفق أفضل ممارسات **هندسة البرمجيات (Software Engineering Best Practices)** ضمن مشروع تخرج المستوى الرابع - قسم هندسة البرمجيات - كلية الحاسبات والمعلوماتية - جامعة ذمار.
 
-- PHP 8.2+ و Composer (يفضل استخدام Laravel Herd على الويندوز).
-- Python 3.10+
-- بيئة وهمية (Virtual Environment) لبايثون.
-- Node.js & NPM (لتطوير الواجهة الأمامية إن لزم الأمر).
+### 🌟 أبرز مميزات النظام:
+* **واجهة فوتوشوب احترافية:** مقارنة الشاشة المقسمة (Before/After Slider)، إدارة الطبقات (Layers)، والتراجع/الإعادة غير المحدود (Undo/Redo Memento Pattern).
+* **معمارية خدمات مصغرة ثنائية النواة:** واجهة وبوابة خلفية قوية مبنية بـ **Laravel 11** متصلة بمحرك علمي حسابي فائق السرعة عبر **Python (Flask, OpenCV, NumPy, SciPy)**.
+* **قدرات خارقة لمعالجة الصور:**
+  - تفريغ وعزل الخلفيات الذكي عبر خوارزمية **GrabCut**.
+  - إزالة التغبيش الحركي واستعادة الصور عبر **Wiener Deconvolution**.
+  - فلتر حجب الترددات التفاعلي **2D-FFT Notch Reject** للقضاء على تموجات المواريه (Moiré).
+  - فرشاة المعالجة الانتقائية (Selective Processing Brush).
+  - استخراج لوحات الألوان الذكية (K-Means Palette) والمكبر الرقمي للبكسلات (7x7 Pixel Loupe).
+  - بث الإطارات اللحظية عبر **WebSocket** لمرآة الواقع المعزز (AR Try-On).
 
-## 🚀 طريقة التشغيل في بيئة التطوير (Development)
+---
 
-لكي يعمل النظام بشكل متكامل، يجب تشغيل الخدمتين معاً:
+## 📜 سياسات المستودع والمجتمع (Community Standards & Governance)
 
-### 1. تشغيل محرك بايثون (Python Engine)
-افتح نافذة موجه أوامر (Terminal) جديدة، وانتقل لمجلد المشروع، ثم نفذ:
+| الوثيقة | الوصف والرابط |
+| :--- | :--- |
+| **رخصة الاستخدام (License)** | مرخص بالكامل تحت رخصة مفتوحة المصدر: [MIT License](LICENSE) |
+| **ميثاق السلوك (Code of Conduct)** | قواعد السلوك والتعاون الأكاديمي بين أفراد الفريق: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) |
+| **سياسة الأمان (Security Policy)** | تعليمات الإبلاغ عن الثغرات وحماية النظام: [SECURITY.md](SECURITY.md) |
+| **دليل المساهمة (Contributing)** | إرشادات كتابة الكود ومراجعة طلبات السحب (PR): [CONTRIBUTING.md](CONTRIBUTING.md) |
+| **دليل سير عمل الطلاب (Git Workflow)** | دليل إدارة الفروع والمهام: [GIT_WORKFLOW_STUDENTS_GUIDE.txt](GIT_WORKFLOW_STUDENTS_GUIDE.txt) |
+| **تقرير معمارية الـ API (PDF Report)** | التقرير الأكاديمي الشامل المعتمد: [docs/VisionCraft_API_Architecture_Report.pdf](docs/VisionCraft_API_Architecture_Report.pdf) |
+
+---
+
+## 🛠️ متطلبات التشغيل (Prerequisites)
+
+- **PHP 8.2+** و **Composer** (يفضل استخدام Laravel Herd أو بيئة متوافقة).
+- **Python 3.10+** مع تثبيت البيئة الوهمية (venv).
+- **Node.js & NPM** (لتطوير وبناء الواجهة إن لزم الأمر).
+
+---
+
+## 🚀 طريقة التشغيل في بيئة التطوير (Quick Start)
+
+لكي يعمل النظام بشكل متكامل، يتم تشغيل الخدمتين معاً:
+
+### 1. تشغيل محرك بايثون العلمي (Python DIP Engine)
+افتح نافذة موجه أوامر (Terminal) وانتقل لمجلد الخدمة المصغرة:
 ```bash
 cd python_engine
 python -m venv venv
-venv\Scripts\activate
+venv\Scripts\activate       # على أنظمة لينكس/ماك: source venv/bin/activate
 pip install -r requirements.txt
-python app/server.py
+python app/server.py        # أو تشغيل python run.py
 ```
 > سيتم تشغيل المحرك على المنفذ `5001` (`http://127.0.0.1:5001`).
 
-### 2. تشغيل سيرفر لارافل (Laravel Server)
-افتح نافذة موجه أوامر (Terminal) أخرى في المسار الرئيسي للمشروع، ونفذ:
+### 2. تشغيل سيرفر لارافل (Laravel API Gateway & Frontend)
+افتح نافذة موجه أوامر أخرى في المسار الرئيسي للمشروع:
 ```bash
 composer install
 cp .env.example .env
 php artisan key:generate
 php artisan serve
 ```
-> سيتم تشغيل واجهة الموقع على المنفذ `8000` (`http://127.0.0.1:8000`).
-> لارافل سيقوم بتمرير جميع طلبات المعالجة (`/api/process`) إلى محرك بايثون خلف الكواليس.
+> سيتم تشغيل واجهة الموقع على المنفذ `8000` (`http://127.0.0.1:8000`).  
+> يقوم لارافل بخدمة الواجهة وتمرير طلبات المعالجة (`/api/process`) مباشرة إلى محرك بايثون.
 
-## 👥 آلية العمل الجماعي (Team Workflow)
+---
 
-- **الفروع (Branches):** يجب على كل عضو في الفريق (4 أعضاء) إنشاء فرع خاص بمهمته قبل البدء بالتطوير (مثال: `feature/ui-improvements` أو `fix/image-crop`).
-- **لوحة المهام (Kanban):** يُفضل استخدام Trello أو GitHub Projects لتتبع المهام (To Do, In Progress, Review, Done).
-- **الدمج (Merge):** لا تقم بالدمج مباشرة إلى الـ `main`. قم بعمل Pull Request (PR) ليقوم زميل آخر بمراجعة الكود.
+## 👥 آلية العمل الجماعي (Team Workflow & Scrum)
 
-## 📁 هيكلة المشروع (Architecture)
+- **الفروع (Branches):** يجب على كل عضو إنشاء فرع منفصل لكل مهمة (مثل: `feature/ui-improvements` أو `fix/grabcut-mask`).
+- **قوالب المشاكل (Issue Templates):** استخدم قوالب GitHub المجهزة مسبقاً (`.github/ISSUE_TEMPLATE`) لتسجيل المهام أو الأخطاء.
+- **طلبات السحب (Pull Requests):** لا تقم بالدمج مباشرة إلى الـ `main`. افتح PR ليتم فحصه آلياً عبر GitHub Actions ومراجعته من الزملاء.
+
+---
+
+## 📁 هيكلية المشروع (Architecture Tree)
 
 ```text
 /
-├── app/Http/Controllers/ImageProcessingController.php  <-- المتحكم الخاص بربط لارافل مع بايثون
-├── public/                  <-- ملفات الـ Assets (js, css, images)
-├── python_engine/           <-- مجلد الخدمة المصغرة (Python Microservice)
-│   ├── app/server.py        <-- ملف التشغيل للخدمة المصغرة
-│   ├── core/                <-- خوارزميات معالجة الصور
-│   └── requirements.txt
-├── resources/views/         <-- واجهات Blade (مثل welcome.blade.php)
-├── routes/
-│   ├── api.php              <-- مسارات الـ API التي تنادي ImageProcessingController
-│   └── web.php              <-- مسار الويب الرئيسي
-└── ...
+├── app/Http/Controllers/ImageProcessingController.php  <-- المتحكم الوسيط لنقل الطلبات إلى بايثون
+├── docs/VisionCraft_API_Architecture_Report.pdf        <-- التقرير الهندسي الشامل للـ API (11 صفحة)
+├── public/                                             <-- أصول الواجهة (JavaScript, CSS, Assets)
+├── python_engine/                                      <-- الخدمة المصغرة لمحرك بايثون
+│   ├── app/server.py                                   <-- خادم Flask و Socket.IO
+│   ├── core/                                           <-- خوارزميات معالجة الصور الرقمية (DIP)
+│   └── requirements.txt                                <-- حزم بايثون (OpenCV, NumPy, SciPy...)
+├── resources/views/welcome.blade.php                   <-- واجهة استوديو الفوتوشوب التفاعلية
+├── routes/api.php                                      <-- مسارات الـ API العامة (/api/process)
+├── CODE_OF_CONDUCT.md                                  <-- ميثاق قواعد السلوك
+├── CONTRIBUTING.md                                     <-- دليل المساهمة
+├── LICENSE                                             <-- رخصة الاستخدام (MIT)
+└── SECURITY.md                                         <-- سياسة الأمان وحماية النظام
 ```
