@@ -4,6 +4,8 @@
 ![Laravel](https://img.shields.io/badge/Laravel-11-FF2D20?style=flat&logo=laravel&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat&logo=python&logoColor=white)
 ![OpenCV](https://img.shields.io/badge/OpenCV-4.8+-5C3EE8?style=flat&logo=opencv&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=flat&logo=mysql&logoColor=white)
+![Git](https://img.shields.io/badge/Git-Version_Control-F05032?style=flat&logo=git&logoColor=white)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 ![Architecture](https://img.shields.io/badge/Architecture-Microservices-blue)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
@@ -11,11 +13,21 @@
 ---
 
 ## 📖 وصف المشروع (Project Description)
-**VisionCraft DIP Studio** هو استوديو ويب تفاعلي متقدم يحاكي برنامج أدوبي فوتوشوب (Photoshop Pro)، مخصص لحسابات ومعالجة الصور الرقمية (Digital Image Processing - DIP) وتقنيات الواقع المعزز (AR Mirror).
+يواجه الطلاب والباحثون صعوبة في الوصول لأدوات خفيفة وسهلة لتطبيق خوارزميات معالجة الصور الرقمية (DIP) والرياضيات التطبيقية دون الحاجة لتثبيت برامج ثقيلة أو كتابة أكواد تفصيلية لكل تجربة.
 
-تم تصميم النظام وبناؤه وفق أفضل ممارسات **هندسة البرمجيات (Software Engineering Best Practices)** ضمن مشروع تخرج المستوى الرابع - قسم هندسة البرمجيات - كلية الحاسبات والمعلوماتية - جامعة ذمار.
+يقدم مشروع **VisionCraft DIP Studio** حلاً متكاملاً عبر استوديو ويب تفاعلي متقدم يحاكي برنامج أدوبي فوتوشوب (Photoshop Pro)، مخصص لحسابات ومعالجة الصور الرقمية وتطبيقات الواقع المعزز (AR Mirror). تم تصميم النظام وبناؤه وفق أفضل ممارسات **هندسة البرمجيات (Software Engineering Best Practices)** ضمن مشروع تخرج المستوى الرابع - قسم هندسة البرمجيات - كلية الحاسبات والمعلوماتية - جامعة ذمار.
 
-### 🌟 أبرز مميزات النظام:
+---
+
+## 👥 أعضاء الفريق (Team Members)
+- **أحمد القاضي**
+- **أمجد الفضلي**
+- **شعيب جازم**
+- **هارون العفيف**
+
+---
+
+## 🌟 أبرز مميزات النظام (Key Features)
 * **واجهة فوتوشوب احترافية:** مقارنة الشاشة المقسمة (Before/After Slider)، إدارة الطبقات (Layers)، والتراجع/الإعادة غير المحدود (Undo/Redo Memento Pattern).
 * **معمارية خدمات مصغرة ثنائية النواة:** واجهة وبوابة خلفية قوية مبنية بـ **Laravel 11** متصلة بمحرك علمي حسابي فائق السرعة عبر **Python (Flask, OpenCV, NumPy, SciPy)**.
 * **قدرات خارقة لمعالجة الصور:**
@@ -37,6 +49,8 @@
 | **سياسة الأمان (Security Policy)** | تعليمات الإبلاغ عن الثغرات وحماية النظام: [SECURITY.md](SECURITY.md) |
 | **دليل المساهمة (Contributing)** | إرشادات كتابة الكود ومراجعة طلبات السحب (PR): [CONTRIBUTING.md](CONTRIBUTING.md) |
 | **دليل سير عمل الطلاب (Git Workflow)** | دليل إدارة الفروع والمهام: [GIT_WORKFLOW_STUDENTS_GUIDE.txt](GIT_WORKFLOW_STUDENTS_GUIDE.txt) |
+| **وثيقة المتطلبات (SRS)** | مواصفات ومتطلبات النظام: [docs/SRS.md](docs/SRS.md) |
+| **سجل استخدام الذكاء الاصطناعي** | توثيق استخدام أدوات الذكاء الاصطناعي: [AI_LOG.md](AI_LOG.md) |
 | **تقرير معمارية الـ API (PDF Report)** | التقرير الأكاديمي الشامل المعتمد: [docs/VisionCraft_API_Architecture_Report.pdf](docs/VisionCraft_API_Architecture_Report.pdf) |
 
 ---
@@ -46,6 +60,7 @@
 - **PHP 8.2+** و **Composer** (يفضل استخدام Laravel Herd أو بيئة متوافقة).
 - **Python 3.10+** مع تثبيت البيئة الوهمية (venv).
 - **Node.js & NPM** (لتطوير وبناء الواجهة إن لزم الأمر).
+- **MySQL 8.0+** لقواعد البيانات.
 
 ---
 
@@ -62,7 +77,7 @@ venv\Scripts\activate       # على أنظمة لينكس/ماك: source venv/b
 pip install -r requirements.txt
 python app/server.py        # أو تشغيل python run.py
 ```
-> سيتم تشغيل المحرك على المنفذ `5001` (`http://127.0.0.1:5001`).
+> يعمل المحرك على المنفذ `5001` (`http://127.0.0.1:5001`).
 
 ### 2. تشغيل سيرفر لارافل (Laravel API Gateway & Frontend)
 افتح نافذة موجه أوامر أخرى في المسار الرئيسي للمشروع:
