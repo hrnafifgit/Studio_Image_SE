@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>تقرير مواصفات متطلبات البرمجيات (SRS) - VisionCraft</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm 15mm 20mm 15mm;
+            @bottom-left {
+                content: "VisionCraft - DIP Studio";
+                font-family: 'Cairo', sans-serif;
+                font-size: 9pt;
+                color: #64748b;
+            }
+            @bottom-right {
+                content: "صفحة " counter(page) " من " counter(pages);
+                font-family: 'Cairo', sans-serif;
+                font-size: 9pt;
+                color: #64748b;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        body {
+            font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+            color: #1e293b;
+            background-color: #ffffff;
+            line-height: 1.7;
+            font-size: 11pt;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* --- Cover Page --- */
+        .cover-page {
+            height: 98vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px 20px;
+            page-break-after: always;
+            border-right: 8px solid #3b82f6;
+            background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
+            margin: -20mm -15mm 0mm -15mm;
+            padding: 60px 50px;
+        }
+
+        .cover-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-badge {
+            background: #1e3a8a;
+            color: #ffffff;
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 14pt;
+            letter-spacing: 0.5px;
+        }
+
+        .doc-type {
+            font-size: 11pt;
+            color: #3b82f6;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .cover-body {
+            margin-top: 60px;
+        }
+
+        .cover-title {
+            font-size: 32pt;
+            font-weight: 900;
+            color: #0f172a;
+            margin: 0 0 15px 0;
+            line-height: 1.25;
+        }
+
+        .cover-subtitle {
+            font-size: 16pt;
+            color: #475569;
+            font-weight: 600;
+            margin-bottom: 30px;
+        }
+
+        .cover-divider {
+            width: 120px;
+            height: 5px;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            border-radius: 3px;
+            margin-bottom: 40px;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .meta-label {
+            font-size: 9.5pt;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .meta-value {
+            font-size: 12pt;
+            color: #0f172a;
+            font-weight: 700;
+        }
+
+        .cover-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #cbd5e1;
+            padding-top: 20px;
+            font-size: 10pt;
+            color: #64748b;
+        }
+
+        /* --- Content Layout --- */
+        .section {
+            margin-bottom: 35px;
+        }
+
+        h1, h2, h3, h4 {
+            color: #0f172a;
+            font-weight: 800;
+            page-break-after: avoid;
+        }
+
+        h2 {
+            font-size: 18pt;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 8px;
+            margin-top: 30px;
+            margin-bottom: 18px;
+            color: #1e3a8a;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        h3 {
+            font-size: 14pt;
+            margin-top: 22px;
+            margin-bottom: 12px;
+            color: #2563eb;
+        }
+
+        p {
+            margin-top: 0;
+            margin-bottom: 14px;
+            text-align: justify;
+        }
+
+        /* --- Tables --- */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 10pt;
+            page-break-inside: avoid;
+        }
+
+        th {
+            background-color: #1e3a8a;
+            color: #ffffff;
+            font-weight: 700;
+            text-align: right;
+            padding: 10px 14px;
+            border: 1px solid #1e3a8a;
+        }
+
+        td {
+            padding: 9px 14px;
+            border: 1px solid #cbd5e1;
+            vertical-align: top;
+        }
+
+        tr:nth-child(even) td {
+            background-color: #f8fafc;
+        }
+
+        /* --- Callout Box --- */
+        .callout {
+            background: #eff6ff;
+            border-right: 4px solid #3b82f6;
+            padding: 15px 20px;
+            border-radius: 6px;
+            margin: 20px 0;
+            font-size: 10.5pt;
+        }
+
+        .callout-title {
+            font-weight: 700;
+            color: #1e40af;
+            margin-bottom: 6px;
+        }
+
+        /* --- Architecture Diagram Box --- */
+        .arch-diagram {
+            background: #0f172a;
+            color: #f8fafc;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            font-family: 'JetBrains Mono', monospace;
+            direction: ltr;
+            font-size: 9.5pt;
+            line-height: 1.5;
+            page-break-inside: avoid;
+        }
+
+        .arch-title {
+            font-family: 'Cairo', sans-serif;
+            direction: rtl;
+            color: #38bdf8;
+            font-weight: 700;
+            font-size: 11pt;
+            margin-bottom: 12px;
+        }
+
+        /* --- Lists --- */
+        ul, ol {
+            margin-top: 0;
+            margin-bottom: 16px;
+            padding-right: 24px;
+        }
+
+        li {
+            margin-bottom: 6px;
+        }
+
+        /* --- Page Breaks --- */
+        .page-break {
+            page-break-before: always;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Cover Page -->
+    <div class="cover-page">
+        <div class="cover-header">
+            <div class="logo-badge">VisionCraft Studio</div>
+            <div class="doc-type">Software Requirements Specification</div>
+        </div>
+
+        <div class="cover-body">
+            <div class="cover-title">وثيقة مواصفات متطلبات البرمجيات (SRS)</div>
+            <div class="cover-subtitle">منصة استوديو معالجة الصور الرقمية - Digital Image Processing Studio</div>
+            <div class="cover-divider"></div>
+
+            <div class="meta-grid">
+                <div class="meta-item">
+                    <span class="meta-label">إعداد التقرير</span>
+                    <span class="meta-value">فريق هندسة البرمجيات</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">المعمارية الهندسة</span>
+                    <span class="meta-value">Laravel 11 + Python Microservices</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">إصدار المستند</span>
+                    <span class="meta-value">v2.0 (معتمد)</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">تاريخ الاصدار</span>
+                    <span class="meta-value">سبتمبر 2026</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="cover-footer">
+            <span>© 2026 VisionCraft DIP Team</span>
+            <span>حالة الوثيقة: معتمدة للتطوير والاختبار</span>
+        </div>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="section">
+        <h2>1. المقدمة والنظرة العامة (Introduction & Overview)</h2>
+        
+        <h3>1.1 الهدف من المستند (Document Purpose)</h3>
+        <p>
+            تهدف هذه الوثيقة إلى تقديم مواصفات تفصيلية وشاملة لمتطلبات البرمجيات (Software Requirements Specification - SRS) لمنصة <strong>VisionCraft - Digital Image Processing Studio</strong>. تُحدد الوثيقة المتطلبات الوظيفية وغير الوظيفية، المعمارية الهندسية، قيود التصميم، وسيناريوهات الاستخدام المستهدفة لتكون المرجع الأول لمصممي ومطوري ومختبري النظام.
+        </p>
+
+        <h3>1.2 نطاق النظام (System Scope)</h3>
+        <p>
+            نظام <strong>VisionCraft</strong> هو بيئة ويب تفاعلية متكاملة لمعالجة الصور الرقمية، تم تصميمها لخدمة الطلاب والمهندسين والباحثين في مجالات هندسة البرمجيات ورؤية الحاسوب (Computer Vision). يوفر النظام واجهة رسومية غنية شبيهة ببرامج التحرير الاحترافية (مثل Photoshop)، مدعومة بمحرك خوارزميات بايثون يعمل كخدمة مصغرة (Microservice) منفصلة لتنفيذ المعالجة الرياضية المعقدة بمرونة وكفاءة عالية.
+        </p>
+
+        <h3>1.3 المصطلحات والتعريفات (Definitions & Acronyms)</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">المصطلح</th>
+                    <th>التعريف / المعنى</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>DIP</strong></td>
+                    <td>معالجة الصور الرقمية (Digital Image Processing)</td>
+                </tr>
+                <tr>
+                    <td><strong>SRS</strong></td>
+                    <td>وثيقة متطلبات البرمجيات (Software Requirements Specification)</td>
+                </tr>
+                <tr>
+                    <td><strong>API Proxy</strong></td>
+                    <td>خادم لارافل الوسيط الذي يتلقى طلبات الواجهة ويغلفها لخدمة بايثون</td>
+                </tr>
+                <tr>
+                    <td><strong>Microservice</strong></td>
+                    <td>نمط المعمارية البرمجية القائم على تقسيم النظام لخدمات مستقلة</td>
+                </tr>
+                <tr>
+                    <td><strong>Custom Kernel</strong></td>
+                    <td>مصفوفة نواة مخصصة يُدخلها المستخدم لتطبيق مرشحات مكانية فريدة</td>
+                </tr>
+                <tr>
+                    <td><strong>FFT</strong></td>
+                    <td>تحويل فورير السريع (Fast Fourier Transform) للتحويل للمجال الترددي</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="section">
+        <h2>2. الوصف العام للنظام (Overall Description)</h2>
+
+        <h3>2.1 معمارية النظام (Product Perspective)</h3>
+        <p>
+            يعتمد النظام معمارية الخدمات المصغرة المزدوجة (Dual Microservices Architecture) لتحقيق أفضل ممارسات الفصل بين المسؤوليات (Separation of Concerns):
+        </p>
+        <ul>
+            <li><strong>الواجهة الأمامية والوسيط (Laravel 11)</strong>: تتولى تقديم واجهات Blade و JavaScript التفاعلية مع خادم وسيط (API Gateway/Proxy) لإرسال واستقبال بيانات الصورة.</li>
+            <li><strong>محرك بايثون الخوارزمي (Python Flask Microservice)</strong>: يشتغل على المنفذ <code>5001</code> ويعتمد على <code>OpenCV</code> و <code>NumPy</code> لتمرير المصفوفات الرقمية وتطبيق الخوارزميات فورياً.</li>
+        </ul>
+
+        <div class="arch-diagram">
+            <div class="arch-title">📐 مخطط معمارية الخدمات المصغرة (Architecture Diagram)</div>
+┌────────────────────────────────┐     HTTP POST (API Proxy)    ┌─────────────────────────────────┐
+│   Browser Client (UI / JS)     │ ───────────────────────────> │   Laravel 11 Backend (Port 8000)│
+└────────────────────────────────┘                              └─────────────────────────────────┘
+                                                                               │
+                                                                               │ Proxy Request
+                                                                               ▼
+┌────────────────────────────────┐     JSON / Base64 Image      ┌─────────────────────────────────┐
+│ Algorithms (NumPy / OpenCV)    │ <─────────────────────────── │ Python Flask Engine (Port 5001) │
+└────────────────────────────────┘                              └─────────────────────────────────┘
+        </div>
+
+        <h3>2.2 فئات المستخدمين (User Classes)</h3>
+        <ul>
+            <li><strong>الطلاب والباحثون الأكاديميون:</strong> تطبيق خوارزميات المعالجة الرقمية واختبار نتائج مصفوفات Convolution والمجال الترددي بشكل تفاعلي.</li>
+            <li><strong>المطورون ومهندسو البرمجيات:</strong> استخدام واستكشاف معمارية الربط بين Laravel و Python Microservices.</li>
+            <li><strong>المستخدمون العامون:</strong> تعديل الصور بسرعة وتطبيق المؤثرات دون برمجيات ثقيلة.</li>
+        </ul>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- Section 3 -->
+    <div class="section">
+        <h2>3. المتطلبات الوظيفية المفصلة (Detailed Functional Requirements)</h2>
+
+        <div class="callout">
+            <div class="callout-title">💡 ملحوظة هامة</div>
+            تم تصميم المتطلبات الوظيفية ليتم تطبيقها عبر محرك بايثون المستقل وتسليم النتائج للواجهة بمرونة ودقة رياضية عالية.
+        </div>
+
+        <h3>3.1 إدارة مساحة العمل والصور (Workspace & Image Management)</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 15%;">رمز المتطلب</th>
+                    <th style="width: 35%;">اسم المتطلب</th>
+                    <th>الوصف والتفاصيل</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>FR-01</strong></td>
+                    <td>رفع الصور Multiple Formats</td>
+                    <td>إمكانية رفع صور بصيغ PNG, JPG, WEBP عبر المتصفح بحجم يصل إلى 50 ميجابايت.</td>
+                </tr>
+                <tr>
+                    <td><strong>FR-02</strong></td>
+                    <td>معاينة مساحة العمل Canvas</td>
+                    <td>عرض الصورة على مساحة العمل الرئيسية مع دعم التكبير والتصغير والتحريك (Pan & Zoom).</td>
+                </tr>
+                <tr>
+                    <td><strong>FR-03</strong></td>
+                    <td>سجل التراجع Undo / Redo</td>
+                    <td>الاحتفاظ بسجل التعديلات السابقة حتى 10 خطوة تراجع على الأقل.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>3.2 المعالجة النقطية والألوان (Point & Color Processing)</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 15%;">رمز المتطلب</th>
+                    <th style="width: 35%;">اسم المتطلب</th>
+                    <th>الوصف والتفاصيل</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>FR-04</strong></td>
+                    <td>ضبط السطوع والتباين</td>
+                    <td>منزلقات تفاعلية لتعديل قيم Brightness & Contrast بلحظية على البكسلات.</td>
+                </tr>
+                <tr>
+                    <td><strong>FR-05</strong></td>
+                    <td>موازنة المدرج Histogram Equalization</td>
+                    <td>توزيع القيم الضوئية لتحسين التباين التلقائي في الصور المعتمة أو شديدة الإضاءة.</td>
+                </tr>
+                <tr>
+                    <td><strong>FR-06</strong></td>
+                    <td>التحويل بين الفضاءات اللونية</td>
+                    <td>تحويل الصورة بين فضاءات الألوان RGB, Grayscale, HSV, LAB, Binary Thresholding.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>3.3 المرشحات المكانية وكشف الحواف (Spatial Filters & Edge Detection)</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 15%;">رمز المتطلب</th>
+                    <th style="width: 35%;">اسم المتطلب</th>
+                    <th>الوصف والتفاصيل</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>FR-07</strong></td>
+                    <td>الفلاتر المكانية الجاهزة</td>
+                    <td>تطبيق فلاتر التنعيم (Blur, Gaussian, Median) وفلاتر الحدة (Sharpening).</td>
+                </tr>
+                <tr>
+                    <td><strong>FR-08</strong></td>
+                    <td>مصفوفة النواة Custom Kernel</td>
+                    <td>إمكانية إدخال مصفوفة أرقام مخصصة (3x3 أو 5x5) وتطبيق عملية التفاف spatial convolution.</td>
+                </tr>
+                <tr>
+                    <td><strong>FR-09</strong></td>
+                    <td>كشف الحواف Edge Detection</td>
+                    <td>توفير خوارزميات Canny, Sobel, Prewitt, Laplacian للكشف عن الحواف والتفاصيل.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Section 4 & 5 -->
+    <div class="section">
+        <h2>4. المتطلبات غير الوظيفية (Non-Functional Requirements)</h2>
+
+        <h3>4.1 الأداء والاستجابة (Performance)</h3>
+        <ul>
+            <li><strong>NFR-01 (سرعة الاستجابة):</strong> لا يتجاوز زمن تنفيذ الفلاتر النقطية والمكانية 2 ثانية للصور بحجم HD.</li>
+            <li><strong>NFR-02 (المجال الترددي):</strong> لا يتجاوز زمن تحويل فورير FFT والعمليات الترددية 4 ثوانٍ.</li>
+            <li><strong>NFR-03 (حد الذاكرة):</strong> ألا تستهلك العملية الواحدة في بايثون أكثر من 512 ميجابايت RAM.</li>
+        </ul>
+
+        <h3>4.2 الأمان والموثوقية (Security & Reliability)</h3>
+        <ul>
+            <li><strong>NFR-04 (فحص الملفات):</strong> التحقق من الامتدادات والأنواع المسموحة في خادم لارافل قبل التمرير لبايثون.</li>
+            <li><strong>NFR-05 (التعامل مع الأخطاء):</strong> إرجاع رسائل استثناء واضحة ومفهومة عند حدوث أي خلل دون توقف الخدمات.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>5. مصفوفة تتبع المتطلبات والاختبار (Traceability Matrix)</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>رمز المتطلب</th>
+                    <th>المكون المسؤول</th>
+                    <th>طريقة الاختبار والتحقق</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>FR-01</strong></td>
+                    <td>Laravel Controller</td>
+                    <td>اختيار ملف PNG/JPG والتأكد من نجاح عملية الرفع.</td>
+                </tr>
+                <tr>
+                    <td><strong>FR-04</strong></td>
+                    <td>Python <code>point_ops.py</code></td>
+                    <td>زيادة السطوع بمقدار +50 وملاحظة إضاءة الصورة فورياً.</td>
+                </tr>
+                <tr>
+                    <td><strong>FR-08</strong></td>
+                    <td>Python <code>spatial_filters.py</code></td>
+                    <td>إدخال مصفوفة 3x3 والتأكد من تطبيق مصفوفة Convolution.</td>
+                </tr>
+                <tr>
+                    <td><strong>FR-10</strong></td>
+                    <td>Python <code>frequency_ops.py</code></td>
+                    <td>تطبيق تحويل فورير وتفقد صورة Magnitude Spectrum الترددية.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>
