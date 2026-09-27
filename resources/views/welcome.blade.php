@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>🐝 VisionCraft Studio - Digital Image Processing & AR Mirror</title>
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
-    <link rel="icon" type="image/png" sizes="64x64" href="bee_logo.png">
-    <link rel="apple-touch-icon" href="bee_logo.png">
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" type="image/png" sizes="64x64" href="{{ asset('bee_logo.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('bee_logo.png') }}">
     <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/photoshop.css">
-    <link rel="stylesheet" href="css/gestures.css">
+    <link rel="stylesheet" href="{{ asset('css/photoshop.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/gestures.css') }}">
 </head>
 <body>
 
@@ -22,7 +23,7 @@
     <div class="ps-menubar">
         <div class="ps-menu-left">
             <div class="ps-icon-badge" title="VisionCraft Bee Studio 🐝" onclick="alert('VisionCraft Bee Studio 🐝\nGraduation Project Level Four - Digital Image Processing\nPowered by Pure Python, OpenCV, NumPy & HTML5 Canvas')">
-                <img src="bee_logo.png" alt="VisionCraft Bee Logo">
+                <img src="{{ asset('bee_logo.png') }}" alt="VisionCraft Bee Logo">
             </div>
             
             <!-- File Menu -->
@@ -33,6 +34,7 @@
                     <div class="ps-dropdown-item" onclick="app.openCollageModal()"><span>📐 قوالب الكولاج وشبكات دمج الصور (Collage Grid)...</span><span style="color:#f59e0b;">Ctrl+Shift+G</span></div>
                     <div class="ps-dropdown-item" onclick="app.openBlendModal()"><span>🖼️ دمج صورتين (Blend Two Images)...</span><span style="color:#10b981;">Ctrl+Shift+M</span></div>
                     <div class="ps-dropdown-item" onclick="document.getElementById('overlayFileInput').click()"><span>Place Image (Overlay / Watermark)...</span><span style="color:#00e5ff;">Ctrl+Shift+P</span></div>
+                    <div class="ps-dropdown-item" onclick="app.openAccessoriesModal()"><span style="color:#c084fc;">👓 استوديو الملحقات والواقع المعزز (AR Try-On)...</span><span style="color:#a855f7;">Ctrl+Shift+A</span></div>
                     <div class="ps-dropdown-separator"></div>
                     <div class="ps-dropdown-item" onclick="app.loadSampleImage('portrait_model.png')"><span style="color:#00e5ff;">👤 Load Portrait Face Model (AR Try-On)</span></div>
                     <div class="ps-dropdown-item" onclick="app.loadSampleImage('benchmark.png')"><span>Load Benchmark Test Pattern</span></div>
@@ -60,6 +62,7 @@
                     <div class="ps-dropdown-item" onclick="app.openBlendModal()"><span>🖼️ دمج ومزج صورتين (DIP Blend)...</span><span style="color:#10b981;">Ctrl+Shift+M</span></div>
                     <div class="ps-dropdown-item" onclick="app.removeBackground()"><span>✂️ تفريغ الخلفية لتصبح شفافة (GrabCut AI)</span><span style="color:#00e5ff;">Ctrl+Shift+B</span></div>
                     <div class="ps-dropdown-item" onclick="app.openBgReplaceModal()"><span>🌅 استبدال الخلفية بصورة أخرى أو استوديو...</span></div>
+                    <div class="ps-dropdown-item" onclick="app.openAccessoriesModal()"><span style="color:#c084fc;">👓 تجربة الملحقات الافتراضية (AR Virtual Try-On)...</span></div>
                     <div class="ps-dropdown-separator"></div>
                     <div class="ps-dropdown-item" onclick="app.setFilter('negative', {}, 'Negative Invert', '')"><span>Invert Negative</span><span style="color:#888;">Ctrl+I</span></div>
                     <div class="ps-dropdown-item" onclick="app.setFilter('color_space', {target: 'gray'}, 'Convert to Grayscale', '')"><span>Grayscale Mode</span></div>
@@ -254,6 +257,7 @@
         </div>
 
         <div style="margin-left:auto; display:flex; gap:8px; align-items:center;">
+            <button class="ps-btn" id="btnToggleAccessories" style="border-color:#a855f7; color:#c084fc; background:rgba(168,85,247,0.12);" onclick="app.openAccessoriesModal()" title="Virtual Try-On / Accessories Studio (👓)">👓 AR Try-On</button>
             <button class="ps-btn" id="btnToggleLoupe" style="border-color:#00e5ff; color:#00e5ff;" onclick="app.togglePixelLoupe()" title="Toggle 7x7 Numeric Pixel Matrix Loupe">🔬 7×7 Matrix HUD</button>
             <button class="ps-btn" onclick="app.setSplitPercent(50)" title="مقارنة الصورة الأصلية والمعالجة بنسبة 50%">Split 50%</button>
             <button class="ps-btn ps-btn-accent" onclick="app.copyPythonCode()" title="نسخ كود بايثون العلمي المقابل للفلتر">📋 Copy Python Code</button>
@@ -1122,6 +1126,47 @@
                 <div style="display:flex; justify-content:flex-end; gap:8px;">
                     <button class="ps-btn" onclick="app.closeCollageModal()">إلغاء</button>
                     <button class="ps-btn ps-btn-accent" style="background:#2563eb; border-color:#3b82f6; padding:6px 18px;" onclick="app.executeCollage()">✨ توليد وتطبيق الكولاج على اللوحة</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AR Virtual Try-On & Accessories Studio Modal -->
+    <div class="ps-modal-backdrop" id="accessoriesModal" style="display:none;" onclick="if(event.target===this)app.closeAccessoriesModal()">
+        <div class="ps-shortcuts-modal" style="width:580px; max-width:94%;">
+            <div class="ps-shortcuts-header">
+                <span style="color:#c084fc;">👓 استوديو الملحقات والواقع المعزز (AR Virtual Try-On Studio)</span>
+                <span style="cursor:pointer; color:#888; font-size:16px;" onclick="app.closeAccessoriesModal()">✕</span>
+            </div>
+            <div class="ps-shortcuts-body" style="padding:16px; display:flex; flex-direction:column; gap:14px;">
+                <div style="font-size:11px; color:#aaa; line-height:1.5;">
+                    اختر أي ملحق لتجربته وتطبيقه كطبقة تراكب ذكية (Overlay) على صورتك أو نموذج الوجه، مع إمكانية التحريك وتغيير الحجم والشفافية:
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;">
+                    <div class="ps-product-card" onclick="app.applyAccessoryOverlay('glasses_black.png', 'نظارة شمسية كلاسيكية')">
+                        <img src="{{ asset('accessories/glasses_black.png') }}" class="ps-product-thumb" style="object-fit:contain; background:#1e293b; padding:8px; height:85px;" alt="نظارة سوداء">
+                        <div class="ps-product-title">نظارة شمسية سوداء</div>
+                    </div>
+                    <div class="ps-product-card" onclick="app.applyAccessoryOverlay('glasses_optical.png', 'نظارة طبية ذكية')">
+                        <img src="{{ asset('accessories/glasses_optical.png') }}" class="ps-product-thumb" style="object-fit:contain; background:#1e293b; padding:8px; height:85px;" alt="نظارة طبية">
+                        <div class="ps-product-title">نظارة طبية شفافة</div>
+                    </div>
+                    <div class="ps-product-card" onclick="app.applyAccessoryOverlay('hat_fedora.png', 'قبعة فيدورا كلاسيكية')">
+                        <img src="{{ asset('accessories/hat_fedora.png') }}" class="ps-product-thumb" style="object-fit:contain; background:#1e293b; padding:8px; height:85px;" alt="قبعة فيدورا">
+                        <div class="ps-product-title">قبعة فيدورا أنيقة</div>
+                    </div>
+                    <div class="ps-product-card" onclick="app.applyAccessoryOverlay('scarf_winter.png', 'وشاح شتوي دافئ')">
+                        <img src="{{ asset('accessories/scarf_winter.png') }}" class="ps-product-thumb" style="object-fit:contain; background:#1e293b; padding:8px; height:85px;" alt="وشاح شتوي">
+                        <div class="ps-product-title">وشاح شتوي دافئ</div>
+                    </div>
+                    <div class="ps-product-card" onclick="app.applyAccessoryOverlay('suit_formal.png', 'بدلة رسمية فاخرة')">
+                        <img src="{{ asset('accessories/suit_formal.png') }}" class="ps-product-thumb" style="object-fit:contain; background:#1e293b; padding:8px; height:85px;" alt="بدلة رسمية">
+                        <div class="ps-product-title">طقم بدلة رسمية</div>
+                    </div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; background:#181818; padding:8px 12px; border-radius:4px; border:1px solid #333; font-size:11px;">
+                    <span style="color:#888;">💡 نصيحة: يمكنك أيضاً تحميل نموذج الوجه القياسي للاختبار:</span>
+                    <button class="ps-btn ps-btn-accent" style="font-size:10px; padding:2px 8px;" onclick="app.loadSampleImage('portrait_model.png'); app.closeAccessoriesModal();">👤 تحميل الموديل</button>
                 </div>
             </div>
         </div>

@@ -226,6 +226,48 @@ class PhotoshopApp {
         this.collageActiveSlotIndex = 0;
         this.collageBorderGap = 10;
         this.collageBorderColor = [255, 255, 255];
+
+        // AR Virtual Try-On & Accessories Modal
+        this.accessoriesModal = document.getElementById("accessoriesModal");
+    }
+
+    // =========================================================================
+    // AR VIRTUAL TRY-ON & ACCESSORIES STUDIO
+    // =========================================================================
+    openAccessoriesModal() {
+        if (this.accessoriesModal) this.accessoriesModal.style.display = "flex";
+    }
+
+    closeAccessoriesModal() {
+        if (this.accessoriesModal) this.accessoriesModal.style.display = "none";
+    }
+
+    applyAccessoryOverlay(filename, label) {
+        this.closeAccessoriesModal();
+        this.showToast(`Loading ${label}...`, "👓");
+        const img = new Image();
+        img.crossOrigin = "Anonymous";
+        img.onload = () => {
+            const c = document.createElement("canvas");
+            c.width = img.width;
+            c.height = img.height;
+            const ctx = c.getContext("2d");
+            ctx.drawImage(img, 0, 0);
+            this.overlayImageBase64 = c.toDataURL("image/png");
+            this.overlayScale = 0.85;
+            this.overlayOpacity = 1.0;
+            this.overlayCoords = { x: 50, y: 35 };
+            if (this.overlayScaleSlider) this.overlayScaleSlider.value = 0.85;
+            if (this.overlayScaleLabel) this.overlayScaleLabel.innerText = "0.85x";
+            if (this.overlayOpacitySlider) this.overlayOpacitySlider.value = 1.0;
+            if (this.overlayOpacityLabel) this.overlayOpacityLabel.innerText = "100%";
+            if (this.overlayOptionsBar) this.overlayOptionsBar.style.display = "flex";
+            this.showToast(`${label} placed. Drag or scale to fit!`, "✨");
+        };
+        img.onerror = () => {
+            this.showToast("Failed to load accessory image.", "❌");
+        };
+        img.src = `accessories/${filename}`;
     }
 
     initEvents() {
@@ -861,6 +903,9 @@ class PhotoshopApp {
             this.cacheRawImageBitmap(img);
             this.applyCurrentFilter();
         };
+        img.onerror = () => {
+            this.showToast(`تعذر تحميل صورة العينة: ${filename}`, "❌");
+        };
         img.src = `samples/${filename}`;
     }
 
@@ -1165,13 +1210,8 @@ class PhotoshopApp {
         this.notchModal.style.display = "flex";
 
         try {
-            const resp = await fetch("http://127.0.0.1:5001/api/process", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ image: this.rawImageBase64, operation: "fft_spectrum" })
-            });
-            const data = await resp.json();
-            if (data.status === "success") {
+            const data = await this.sendApiProcess({ image: this.rawImageBase64, operation: "fft_spectrum" }, "FFT Spectrum");
+            if (data && data.status === "success") {
                 const img = new Image();
                 img.onload = () => {
                     const ctx = this.notchSpectrumCanvas.getContext("2d");
@@ -1293,6 +1333,42 @@ class PhotoshopApp {
         }, 60);
     }
 
+    async sendApiProcess(payload, actionDescription = "") {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content");
+        const headers = { "Content-Type": "application/json" };
+        if (csrfToken) {
+            headers["X-CSRF-TOKEN"] = csrfToken;
+        }
+
+        // Try Laravel Gateway (/api/process) first, then direct Python Server (http://127.0.0.1:5001/api/process)
+        const endpoints = [
+            "/api/process",
+            "http://127.0.0.1:5001/api/process"
+        ];
+
+        let lastError = null;
+        for (const endpoint of endpoints) {
+            try {
+                const resp = await fetch(endpoint, {
+                    method: "POST",
+                    headers: headers,
+                    body: JSON.stringify(payload)
+                });
+                if (!resp.ok) {
+                    const errorJson = await resp.json().catch(() => ({}));
+                    throw new Error(errorJson.message || `HTTP ${resp.status}`);
+                }
+                const data = await resp.json();
+                return data;
+            } catch (err) {
+                lastError = err;
+            }
+        }
+        console.error(`API process error for ${actionDescription}:`, lastError);
+        this.showToast("تعذر الاتصال بمحرك المعالجة - تأكد من تشغيل الخادم", "⚠️");
+        throw lastError;
+    }
+
     async applyCurrentFilter() {
         if (!this.rawImageBase64) return;
 
@@ -1303,14 +1379,8 @@ class PhotoshopApp {
                 params: this.activeParams
             };
 
-            const response = await fetch("http://127.0.0.1:5001/api/process", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
-
-            const data = await response.json();
-            if (data.status === "success") {
+            const data = await this.sendApiProcess(payload, this.activeOperation);
+            if (data && data.status === "success") {
                 this.processedImageBase64 = data.image;
                 
                 if (this.hasBrushStrokes && this.activeTool === "brush") {
@@ -1443,24 +1513,19 @@ class PhotoshopApp {
         this.showToast("Rendering TrueType typography...", "🔤");
 
         try {
-            const resp = await fetch("http://127.0.0.1:5001/api/process", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    image: this.rawImageBase64,
-                    operation: "add_text",
-                    params: {
-                        text: text,
-                        x: x,
-                        y: y,
-                        font_size: fontSize,
-                        font_family: fontFamily,
-                        color: colorBgr
-                    }
-                })
-            });
-            const data = await resp.json();
-            if (data.status === "success") {
+            const data = await this.sendApiProcess({
+                image: this.rawImageBase64,
+                operation: "add_text",
+                params: {
+                    text: text,
+                    x: x,
+                    y: y,
+                    font_size: fontSize,
+                    font_family: fontFamily,
+                    color: colorBgr
+                }
+            }, "Add Text");
+            if (data && data.status === "success") {
                 this.commitNewBaseImage(data.image);
                 this.showToast("Text Layer Merged Successfully", "🔤");
             } else {
@@ -1477,17 +1542,12 @@ class PhotoshopApp {
         this.showToast("Extracting Subject with GrabCut AI...", "✂️");
 
         try {
-            const resp = await fetch("http://127.0.0.1:5001/api/process", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    image: this.rawImageBase64,
-                    operation: "remove_background",
-                    params: { margin: 15 }
-                })
-            });
-            const data = await resp.json();
-            if (data.status === "success") {
+            const data = await this.sendApiProcess({
+                image: this.rawImageBase64,
+                operation: "remove_background",
+                params: { margin: 15 }
+            }, "Remove Background");
+            if (data && data.status === "success") {
                 this.commitNewBaseImage(data.image);
                 this.showToast("Background Removed (Transparent Alpha PNG)", "✂️");
             } else {
@@ -1522,17 +1582,12 @@ class PhotoshopApp {
         this.showToast(`Replacing Background (${type})...`, "🌅");
 
         try {
-            const resp = await fetch("http://127.0.0.1:5001/api/process", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    image: this.rawImageBase64,
-                    operation: "replace_background",
-                    params: params
-                })
-            });
-            const data = await resp.json();
-            if (data.status === "success") {
+            const data = await this.sendApiProcess({
+                image: this.rawImageBase64,
+                operation: "replace_background",
+                params: params
+            }, "Replace Background");
+            if (data && data.status === "success") {
                 this.commitNewBaseImage(data.image);
                 this.showToast(`Background Changed (${type})`, "🌅");
             } else {
@@ -1594,23 +1649,18 @@ class PhotoshopApp {
         this.showToast("Merging Overlay Image...", "🖼");
 
         try {
-            const resp = await fetch("http://127.0.0.1:5001/api/process", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    image: this.rawImageBase64,
-                    operation: "image_overlay",
-                    params: {
-                        overlay_image: this.overlayImageBase64,
-                        x: this.overlayCoords.x,
-                        y: this.overlayCoords.y,
-                        scale: this.overlayScale,
-                        opacity: this.overlayOpacity
-                    }
-                })
-            });
-            const data = await resp.json();
-            if (data.status === "success") {
+            const data = await this.sendApiProcess({
+                image: this.rawImageBase64,
+                operation: "image_overlay",
+                params: {
+                    overlay_image: this.overlayImageBase64,
+                    x: this.overlayCoords.x,
+                    y: this.overlayCoords.y,
+                    scale: this.overlayScale,
+                    opacity: this.overlayOpacity
+                }
+            }, "Image Overlay");
+            if (data && data.status === "success") {
                 this.cancelOverlay();
                 this.commitNewBaseImage(data.image);
                 this.showToast("Overlay Merged Successfully", "🖼");
@@ -1693,24 +1743,19 @@ class PhotoshopApp {
 
         const mode = this.blendAlgorithmSelect ? this.blendAlgorithmSelect.value : "linear";
         try {
-            const resp = await fetch("http://127.0.0.1:5001/api/process", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    image: this.rawImageBase64,
-                    operation: "blend_images",
-                    params: {
-                        second_image: this.blendSecondImageBase64,
-                        alpha: this.blendAlpha,
-                        mode: mode
-                    }
-                })
-            });
-            const data = await resp.json();
-            if (data.status === "success") {
+            const data = await this.sendApiProcess({
+                image: this.rawImageBase64,
+                operation: "blend_images",
+                params: {
+                    second_image: this.blendSecondImageBase64,
+                    alpha: this.blendAlpha,
+                    mode: mode
+                }
+            }, "Blend Images");
+            if (data && data.status === "success") {
                 this.commitNewBaseImage(data.image);
-                if (data.formula && this.formulaEl) this.formulaEl.innerText = data.formula;
-                if (data.code && this.codeEl) this.codeEl.innerText = data.code;
+                if (data.formula && this.formulaBox) this.formulaBox.innerText = data.formula;
+                if (data.code && this.codeSnippet) this.codeSnippet.innerText = data.code;
                 this.showToast("Images Blended Successfully! 🎉", "✨");
             } else {
                 alert("Blending error: " + (data.message || "Failed"));
@@ -1851,25 +1896,20 @@ class PhotoshopApp {
         this.showToast("Generating Photo Collage...", "📐");
 
         try {
-            const resp = await fetch("http://127.0.0.1:5001/api/process", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    image: this.rawImageBase64 || imgs[0],
-                    operation: "photo_collage",
-                    params: {
-                        images: imgs,
-                        template: this.collageTemplate,
-                        border_size: this.collageBorderGap,
-                        border_color: this.collageBorderColor
-                    }
-                })
-            });
-            const data = await resp.json();
-            if (data.status === "success") {
+            const data = await this.sendApiProcess({
+                image: this.rawImageBase64 || imgs[0],
+                operation: "photo_collage",
+                params: {
+                    images: imgs,
+                    template: this.collageTemplate,
+                    border_size: this.collageBorderGap,
+                    border_color: this.collageBorderColor
+                }
+            }, "Photo Collage");
+            if (data && data.status === "success") {
                 this.commitNewBaseImage(data.image);
-                if (data.formula && this.formulaEl) this.formulaEl.innerText = data.formula;
-                if (data.code && this.codeEl) this.codeEl.innerText = data.code;
+                if (data.formula && this.formulaBox) this.formulaBox.innerText = data.formula;
+                if (data.code && this.codeSnippet) this.codeSnippet.innerText = data.code;
                 this.showToast("Collage Assembled Successfully! 🎉", "📐");
             } else {
                 alert("Collage error: " + (data.message || "Failed"));
@@ -1978,17 +2018,12 @@ class PhotoshopApp {
         this.showToast("Applying Crop...", "✂️");
 
         try {
-            const resp = await fetch("http://127.0.0.1:5001/api/process", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    image: this.rawImageBase64,
-                    operation: "crop",
-                    params: { x, y, width: w, height: h }
-                })
-            });
-            const data = await resp.json();
-            if (data.status === "success") {
+            const data = await this.sendApiProcess({
+                image: this.rawImageBase64,
+                operation: "crop",
+                params: { x, y, width: w, height: h }
+            }, "Crop");
+            if (data && data.status === "success") {
                 this.cancelCrop();
                 this.commitNewBaseImage(data.image);
                 this.fitToScreen();
@@ -2357,22 +2392,17 @@ class PhotoshopApp {
             bgCtx.drawImage(bgImg, 0, 0);
             const bgBase64 = bgCanvas.toDataURL("image/jpeg", 0.95);
 
-            const resp = await fetch("http://127.0.0.1:5001/api/process", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    image: this.rawImageBase64,
-                    operation: "replace_background",
-                    params: {
-                        bg_type: "image",
-                        bg_image: bgBase64,
-                        margin: 15
-                    }
-                })
-            });
+            const data = await this.sendApiProcess({
+                image: this.rawImageBase64,
+                operation: "replace_background",
+                params: {
+                    bg_type: "image",
+                    bg_image: bgBase64,
+                    margin: 15
+                }
+            }, "Product Studio");
 
-            const data = await resp.json();
-            if (data.status === "success") {
+            if (data && data.status === "success") {
                 this.commitNewBaseImage(data.image);
                 this.showToast("Product Studio Applied Successfully!", "✨");
             } else {
