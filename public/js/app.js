@@ -15,10 +15,18 @@ class PhotoshopApp {
         this.rawImageBase64 = null;
         this.processedImageBase64 = null;
         this.currentFileName = "benchmark.png";
-        this.activeOperation = "canny";
-        this.activeParams = { t1: 50, t2: 150, sigma: 1.4 };
+        this.activeOperation = "none";
+        this.activeParams = {};
         this.isComparing = true;
         this.splitPercent = 50;
+
+        // History State (Professional Undo / Redo Stack - Memento Pattern)
+        this.undoStack = [];
+        this.redoStack = [];
+        this.maxHistory = 30;
+        this.isRestoringHistory = false;
+        this.currentHistogram = null;
+        this.currentStats = null;
 
         // Viewport Zoom & Pan State
         this.zoomScale = 1.0;
@@ -29,7 +37,7 @@ class PhotoshopApp {
         this.isPanning = false;
 
         // Active Tool
-        this.activeTool = "canny";
+        this.activeTool = "move";
 
         // Superpower 1: Selective Processing Brush State
         this.brushSize = 35;
@@ -159,6 +167,14 @@ class PhotoshopApp {
         this.textFontFamily = document.getElementById("textFontFamily");
         this.textFontSize = document.getElementById("textFontSize");
         this.textOverlayColor = document.getElementById("textOverlayColor");
+
+        // Interactive On-Canvas Text Box Elements
+        this.canvasTextBox = document.getElementById("canvasTextBox");
+        this.canvasTextBoxHeader = document.getElementById("canvasTextBoxHeader");
+        this.canvasTextInput = document.getElementById("canvasTextInput");
+        this.canvasTextSize = document.getElementById("canvasTextSize");
+        this.canvasTextColor = document.getElementById("canvasTextColor");
+        this.canvasTextFont = document.getElementById("canvasTextFont");
         this.overlayOptionsBar = document.getElementById("overlayOptionsBar");
         this.overlayScaleSlider = document.getElementById("overlayScaleSlider");
         this.overlayScaleLabel = document.getElementById("overlayScaleLabel");
@@ -226,6 +242,9 @@ class PhotoshopApp {
         this.collageActiveSlotIndex = 0;
         this.collageBorderGap = 10;
         this.collageBorderColor = [255, 255, 255];
+
+        // Bind dynamic sliders on initial DOM ready
+        this.bindDynamicSliders();
     }
 
     initEvents() {
@@ -240,8 +259,9 @@ class PhotoshopApp {
             this.bgFileInput.addEventListener("change", (e) => this.handleBgFileUpload(e));
         }
 
-        // Initialize Crop & Drawing event listeners
+        // Initialize Crop, Drawing & Text Box event listeners
         this.initCropAndDrawingEvents();
+        this.initTextBoxEvents();
 
         // Split slider mouse dragging
         let isDraggingSplit = false;
@@ -255,13 +275,13 @@ class PhotoshopApp {
         };
         const onMouseUp = () => { isDraggingSplit = false; };
 
-        this.splitBar.addEventListener("mousedown", (e) => { 
-            e.stopPropagation(); 
-            isDraggingSplit = true; 
+        this.splitBar.addEventListener("mousedown", (e) => {
+            e.stopPropagation();
+            isDraggingSplit = true;
         });
-        this.splitKnob.addEventListener("mousedown", (e) => { 
-            e.stopPropagation(); 
-            isDraggingSplit = true; 
+        this.splitKnob.addEventListener("mousedown", (e) => {
+            e.stopPropagation();
+            isDraggingSplit = true;
         });
         window.addEventListener("mousemove", onMouseMove);
         window.addEventListener("mouseup", onMouseUp);
@@ -306,15 +326,36 @@ class PhotoshopApp {
                 return;
             }
 
-            // 3. Type Tool: Click on canvas to set text coordinate
+            // 3. Type Tool: Click on canvas to set text coordinate & show on-canvas text box
             if (this.activeTool === "text" && e.button === 0) {
+                if (e.target && e.target.closest && e.target.closest("#canvasTextBox")) {
+                    return;
+                }
                 const rect = this.canvasRaw.getBoundingClientRect();
                 if (rect.width > 0 && rect.height > 0) {
+                    const clickX = e.clientX - rect.left;
+                    const clickY = e.clientY - rect.top;
                     const scaleX = this.canvasRaw.naturalWidth / rect.width;
                     const scaleY = this.canvasRaw.naturalHeight / rect.height;
-                    this.textCoords.x = Math.max(0, Math.round((e.clientX - rect.left) * scaleX));
-                    this.textCoords.y = Math.max(0, Math.round((e.clientY - rect.top) * scaleY));
-                    this.showToast(`Text Position: (${this.textCoords.x}, ${this.textCoords.y})`, "🔤");
+                    this.textCoords.x = Math.max(0, Math.round(clickX * scaleX));
+                    this.textCoords.y = Math.max(0, Math.round(clickY * scaleY));
+
+                    if (this.canvasTextBox) {
+                        const boxW = 320;
+                        const boxH = 140;
+                        const posX = Math.max(0, Math.min(rect.width - boxW, clickX));
+                        const posY = Math.max(0, Math.min(rect.height - boxH, clickY));
+                        this.canvasTextBox.style.left = `${posX}px`;
+                        this.canvasTextBox.style.top = `${posY}px`;
+                        this.canvasTextBox.style.display = "flex";
+                        if (this.canvasTextInput) {
+                            setTimeout(() => {
+                                this.canvasTextInput.focus();
+                                this.canvasTextInput.select();
+                            }, 50);
+                        }
+                    }
+                    this.showToast(`مربع النص نشط في الإحداثيات: (${this.textCoords.x}, ${this.textCoords.y})`, "🔤");
                 }
                 e.preventDefault();
                 return;
@@ -609,10 +650,14 @@ class PhotoshopApp {
                     this.showToast("Gamma Correction (Ctrl+M)", "⚡");
                     return;
                 }
-                if (e.code === "KeyZ") {
+                if (!isShift && e.code === "KeyZ") {
                     e.preventDefault();
-                    this.setFilter("none", {}, "Original Image", "");
-                    this.showToast("Undo / Revert Filter (Ctrl+Z)", "↩️");
+                    this.undo();
+                    return;
+                }
+                if ((!isShift && e.code === "KeyY") || (isShift && e.code === "KeyZ")) {
+                    e.preventDefault();
+                    this.redo();
                     return;
                 }
                 if (e.key === "=" || e.key === "+") {
@@ -684,7 +729,7 @@ class PhotoshopApp {
     selectSubTool(op, params, title, controlsHtml, groupId) {
         this.closeAllFlyouts();
         document.querySelectorAll(".ps-tbtn").forEach(b => b.classList.remove("active"));
-        
+
         if (groupId) {
             const group = document.getElementById(groupId);
             if (group) {
@@ -711,6 +756,7 @@ class PhotoshopApp {
         if (this.brushOptionsBar) this.brushOptionsBar.style.display = "none";
         if (this.brushCursor) this.brushCursor.style.display = "none";
         if (this.textOptionsBar && toolType !== "text") this.textOptionsBar.style.display = "none";
+        if (this.canvasTextBox && toolType !== "text") this.canvasTextBox.style.display = "none";
         if (this.cropOptionsBar && toolType !== "crop") this.cropOptionsBar.style.display = "none";
         if (this.cropOverlay && toolType !== "crop") this.cropOverlay.style.display = "none";
         if (this.drawOptionsBar && toolType !== "draw") this.drawOptionsBar.style.display = "none";
@@ -749,9 +795,22 @@ class PhotoshopApp {
             this.filterTitle.innerText = "Color Splash Pipette (Click on any color to isolate it!)";
             this.viewport.style.cursor = "crosshair";
         } else if (toolType === "text") {
-            this.filterTitle.innerText = "Horizontal Type Tool (T): Click canvas to set coordinate, then click Render Text";
+            this.filterTitle.innerText = "Horizontal Type Tool (T): انقر على الصورة لوضع مربع الكتابة، أو اكتب مباشرة واضغط تطبيق";
             if (this.textOptionsBar) this.textOptionsBar.style.display = "flex";
+            if (this.canvasTextBox) {
+                this.canvasTextBox.style.display = "flex";
+                if (this.canvasTextInput) {
+                    setTimeout(() => {
+                        this.canvasTextInput.focus();
+                        this.canvasTextInput.select();
+                    }, 50);
+                }
+            }
             this.viewport.style.cursor = "text";
+        } else if (toolType === "cutout") {
+            this.filterTitle.innerText = "أداة موازنة وتفريغ عزل الخلفية (Background Removal & Cutout Suite)";
+            this.viewport.style.cursor = "default";
+            this.setCutoutMode(this.activeCutoutMode || "grabcut");
         }
     }
 
@@ -830,6 +889,9 @@ class PhotoshopApp {
     }
 
     loadSampleImage(filename) {
+        if (!this.isRestoringHistory && this.rawImageBase64) {
+            this.pushUndoSnapshot(`Open Sample: ${filename}`);
+        }
         this.currentFileName = filename;
         const img = new Image();
         img.crossOrigin = "Anonymous";
@@ -867,7 +929,14 @@ class PhotoshopApp {
     handleFileUpload(e) {
         const file = e.target.files[0];
         if (!file) return;
+        if (!this.isRestoringHistory && this.rawImageBase64) {
+            this.pushUndoSnapshot(`Open File: ${file.name}`);
+        }
         this.currentFileName = file.name;
+        this.activeOperation = "none";
+        this.activeParams = {};
+        if (this.filterTitle) this.filterTitle.innerText = "Original Image";
+        if (this.dynamicControls) this.dynamicControls.innerHTML = "<div style='color:#888; font-size:11px; padding:8px 0;'>الصورة الأصلية (بدون فلاتر). اختر أي فلتر أو أداة لتطبيقه.</div>";
         const reader = new FileReader();
         reader.onload = (event) => {
             const img = new Image();
@@ -929,7 +998,7 @@ class PhotoshopApp {
         if (!this.brushMaskCanvas || !this.brushMaskCtx) return;
         this.brushMaskCtx.clearRect(0, 0, this.brushMaskCanvas.width, this.brushMaskCanvas.height);
         this.hasBrushStrokes = false;
-        
+
         // Restore standard split slider view
         this.splitBar.style.display = "block";
         this.splitKnob.style.display = "block";
@@ -1020,7 +1089,7 @@ class PhotoshopApp {
                 return val.toString(16).padStart(2, '0').toUpperCase();
             });
 
-            this.setFilter("color_splash", { target_bgr: target_bgr, tolerance: 26 }, `Color Splash (Target: RGB(${r}, ${g}, ${b}))`, 
+            this.setFilter("color_splash", { target_bgr: target_bgr, tolerance: 26 }, `Color Splash (Target: RGB(${r}, ${g}, ${b}))`,
                 `<div class='ps-prop-row'><span>Sampled Color:</span><span style='color:${hex}; font-weight:bold;'>${hex}</span></div>` +
                 `<div class='ps-prop-row'><span>Hue Tolerance:</span><span id='val_tolerance' style='color:#fff;'>26°</span></div>` +
                 `<input type='range' class='ps-range' min='8' max='60' value='26' data-param='tolerance'>`
@@ -1103,7 +1172,7 @@ class PhotoshopApp {
 
         try {
             const rawData = this.rawOffscreenCtx.getImageData(startX, startY, blockW, blockH).data;
-            const procData = (this.procOffscreenCanvas.width === w) ? 
+            const procData = (this.procOffscreenCanvas.width === w) ?
                 this.procOffscreenCtx.getImageData(startX, startY, blockW, blockH).data : null;
 
             this.loupeGrid.innerHTML = "";
@@ -1253,7 +1322,7 @@ class PhotoshopApp {
         const scaleY = this.canvasRaw.naturalHeight / rect.height;
         const x = Math.floor((e.clientX - rect.left) * scaleX);
         const y = Math.floor((e.clientY - rect.top) * scaleY);
-        
+
         if (x >= 0 && y >= 0 && x < this.canvasRaw.naturalWidth && y < this.canvasRaw.naturalHeight) {
             this.hudCoords.innerText = `X: ${x}px  Y: ${y}px`;
             if (this.isLoupeActive) {
@@ -1263,6 +1332,9 @@ class PhotoshopApp {
     }
 
     setFilter(op, params, title, controlsHtml) {
+        if (!this.isRestoringHistory && this.rawImageBase64) {
+            this.pushUndoSnapshot(this.filterTitle ? this.filterTitle.innerText : "Change Filter");
+        }
         this.activeOperation = op;
         this.activeParams = params || {};
         if (title) this.filterTitle.innerText = title;
@@ -1276,6 +1348,13 @@ class PhotoshopApp {
     bindDynamicSliders() {
         const inputs = this.dynamicControls.querySelectorAll("input[data-param]");
         inputs.forEach(input => {
+            input.addEventListener("pointerdown", () => {
+                if (!this.isRestoringHistory && this.rawImageBase64) {
+                    const paramName = input.getAttribute("data-param") || "param";
+                    this.pushUndoSnapshot(`Adjust ${paramName}`);
+                }
+            }, { passive: true });
+
             input.addEventListener("input", (e) => {
                 const paramName = e.target.getAttribute("data-param");
                 const valDisplay = document.getElementById(`val_${paramName}`);
@@ -1312,7 +1391,9 @@ class PhotoshopApp {
             const data = await response.json();
             if (data.status === "success") {
                 this.processedImageBase64 = data.image;
-                
+                this.currentHistogram = data.histogram;
+                this.currentStats = data.stats;
+
                 if (this.hasBrushStrokes && this.activeTool === "brush") {
                     this.compositeSelectiveBrush();
                 } else {
@@ -1340,7 +1421,7 @@ class PhotoshopApp {
         this.histContainer.innerHTML = "";
         const bars = hist.gray || hist.r || [];
         const maxVal = Math.max(...bars, 1);
-        
+
         const step = Math.ceil(bars.length / 48);
         for (let i = 0; i < bars.length; i += step) {
             const h = (bars[i] / maxVal) * 100;
@@ -1408,6 +1489,165 @@ class PhotoshopApp {
     }
 
     // =========================================================================
+    // PROFESSIONAL UNDO / REDO HISTORY ENGINE (CTRL+Z / CTRL+Y)
+    // =========================================================================
+    captureCurrentState(description = "") {
+        return {
+            description: description || (this.filterTitle ? this.filterTitle.innerText : "State"),
+            rawImageBase64: this.rawImageBase64,
+            processedImageBase64: this.processedImageBase64,
+            currentFileName: this.currentFileName,
+            activeOperation: this.activeOperation,
+            activeParams: JSON.parse(JSON.stringify(this.activeParams || {})),
+            filterTitle: this.filterTitle ? this.filterTitle.innerText : "",
+            controlsHtml: this.dynamicControls ? this.dynamicControls.innerHTML : "",
+            formula: this.formulaBox ? this.formulaBox.innerText : "",
+            code: this.codeSnippet ? this.codeSnippet.innerText : "",
+            perf: this.perfBadge ? this.perfBadge.innerText : "",
+            dimensions: this.statusDimensions ? this.statusDimensions.innerText : "",
+            histogram: this.currentHistogram || null,
+            stats: this.currentStats || null
+        };
+    }
+
+    pushUndoSnapshot(description = "") {
+        if (this.isRestoringHistory || !this.rawImageBase64) return;
+        const snapshot = this.captureCurrentState(description);
+        this.undoStack.push(snapshot);
+        if (this.undoStack.length > this.maxHistory) {
+            this.undoStack.shift();
+        }
+        // New action clears forward redo history
+        this.redoStack = [];
+    }
+
+    undo() {
+        if (this.undoStack.length === 0) {
+            this.showToast("لا توجد عمليات سابقة للتراجع عنها (No more undo)", "ℹ️");
+            return;
+        }
+
+        // Capture current state and push into redoStack
+        const currentState = this.captureCurrentState("Redo State");
+        this.redoStack.push(currentState);
+        if (this.redoStack.length > this.maxHistory) {
+            this.redoStack.shift();
+        }
+
+        // Pop previous state and restore
+        const previousState = this.undoStack.pop();
+        this.restoreHistoryState(previousState, "Undo (تراجع)");
+    }
+
+    redo() {
+        if (this.redoStack.length === 0) {
+            this.showToast("لا توجد عمليات لاحقة لإعادتها (No more redo)", "ℹ️");
+            return;
+        }
+
+        // Capture current state and push into undoStack
+        const currentState = this.captureCurrentState("Undo State");
+        this.undoStack.push(currentState);
+        if (this.undoStack.length > this.maxHistory) {
+            this.undoStack.shift();
+        }
+
+        // Pop next state and restore
+        const nextState = this.redoStack.pop();
+        this.restoreHistoryState(nextState, "Redo (إعادة)");
+    }
+
+    restoreHistoryState(state, actionName = "History") {
+        if (!state) return;
+        this.isRestoringHistory = true;
+
+        try {
+            this.currentFileName = state.currentFileName || this.currentFileName;
+            this.activeOperation = state.activeOperation || "none";
+            this.activeParams = state.activeParams ? JSON.parse(JSON.stringify(state.activeParams)) : {};
+
+            // Restore base raw image if changed
+            if (state.rawImageBase64 && state.rawImageBase64 !== this.rawImageBase64) {
+                this.rawImageBase64 = state.rawImageBase64;
+                this.canvasRaw.src = state.rawImageBase64;
+                this.cacheRawImageBitmapFromSrc(state.rawImageBase64);
+            }
+
+            // Restore processed image
+            if (state.processedImageBase64) {
+                this.processedImageBase64 = state.processedImageBase64;
+                this.canvasProcessed.src = state.processedImageBase64;
+                this.cacheProcessedImageBitmap();
+            } else if (state.rawImageBase64) {
+                this.processedImageBase64 = state.rawImageBase64;
+                this.canvasProcessed.src = state.rawImageBase64;
+            }
+
+            // Restore UI text / title / stats / code
+            if (this.filterTitle && state.filterTitle) {
+                this.filterTitle.innerText = state.filterTitle;
+            }
+            if (this.formulaBox) {
+                this.formulaBox.innerText = state.formula || "";
+            }
+            if (this.codeSnippet) {
+                this.codeSnippet.innerText = state.code || "";
+            }
+            if (this.perfBadge && state.perf) {
+                this.perfBadge.innerText = state.perf;
+            }
+            if (this.statusDimensions && state.dimensions) {
+                this.statusDimensions.innerText = state.dimensions;
+            }
+
+            // Restore controls HTML and rebind sliders
+            if (this.dynamicControls && state.controlsHtml !== undefined) {
+                this.dynamicControls.innerHTML = state.controlsHtml;
+                this.bindDynamicSliders();
+                this.syncSlidersToParams();
+            }
+
+            // Restore histogram if saved
+            if (state.histogram) {
+                this.renderHistogram(state.histogram);
+                this.currentHistogram = state.histogram;
+            }
+            if (state.stats) {
+                this.updateStats(state.stats);
+                this.currentStats = state.stats;
+            }
+
+            this.updateZoomDisplay();
+            this.showToast(`${actionName}: ${state.description || "State"}`, "↩️");
+        } finally {
+            setTimeout(() => {
+                this.isRestoringHistory = false;
+            }, 80);
+        }
+    }
+
+    cacheRawImageBitmapFromSrc(src) {
+        const img = new Image();
+        img.onload = () => {
+            this.cacheRawImageBitmap(img);
+        };
+        img.src = src;
+    }
+
+    syncSlidersToParams() {
+        if (!this.dynamicControls || !this.activeParams) return;
+        const inputs = this.dynamicControls.querySelectorAll("input[data-param]");
+        inputs.forEach(input => {
+            const paramName = input.getAttribute("data-param");
+            if (this.activeParams[paramName] !== undefined) {
+                input.value = this.activeParams[paramName];
+                const valDisplay = document.getElementById(`val_${paramName}`);
+                if (valDisplay) valDisplay.innerText = this.activeParams[paramName];
+            }
+        });
+    }
+
+    // =========================================================================
     // STUDIO COMPOSITION & SUPERPOWERS (TEXT, BG CUT, BG REPLACE, OVERLAY)
     // =========================================================================
     hexToBgr(hex) {
@@ -1422,6 +1662,7 @@ class PhotoshopApp {
 
     // 1. Text Tool Typography
     cancelTextTool() {
+        if (this.canvasTextBox) this.canvasTextBox.style.display = "none";
         if (this.textOptionsBar) this.textOptionsBar.style.display = "none";
         const moveBtn = document.querySelector(".ps-tbtn[title*='Move']");
         if (moveBtn) this.activateToolGroup(moveBtn, "move");
@@ -1429,18 +1670,25 @@ class PhotoshopApp {
 
     async applyTextToImage() {
         if (!this.rawImageBase64) return;
-        const text = this.textOverlayInput ? this.textOverlayInput.value.trim() : "VisionCraft Studio";
+        const text = (this.canvasTextInput && this.canvasTextInput.value.trim())
+            ? this.canvasTextInput.value.trim()
+            : (this.textOverlayInput ? this.textOverlayInput.value.trim() : "VisionCraft Studio");
         if (!text) {
-            this.showToast("Please enter some text", "⚠️");
+            this.showToast("يرجى كتابة النص أولاً", "⚠️");
             return;
         }
-        const fontSize = this.textFontSize ? parseInt(this.textFontSize.value) || 42 : 42;
-        const fontFamily = this.textFontFamily ? this.textFontFamily.value : "tahoma";
-        const colorBgr = this.textOverlayColor ? this.hexToBgr(this.textOverlayColor.value) : [255, 255, 255];
+        const fontSize = this.canvasTextSize
+            ? (parseInt(this.canvasTextSize.value) || 42)
+            : (this.textFontSize ? parseInt(this.textFontSize.value) || 42 : 42);
+        const fontFamily = this.canvasTextFont
+            ? this.canvasTextFont.value
+            : (this.textFontFamily ? this.textFontFamily.value : "tahoma");
+        const colorHex = this.canvasTextColor ? this.canvasTextColor.value : (this.textOverlayColor ? this.textOverlayColor.value : "#ffffff");
+        const colorBgr = this.hexToBgr(colorHex);
         const x = this.textCoords.x || 60;
         const y = this.textCoords.y || 80;
 
-        this.showToast("Rendering TrueType typography...", "🔤");
+        this.showToast("جاري رسم وكتابة النص على الصورة...", "🔤");
 
         try {
             const resp = await fetch("http://127.0.0.1:5001/api/process", {
@@ -1462,7 +1710,11 @@ class PhotoshopApp {
             const data = await resp.json();
             if (data.status === "success") {
                 this.commitNewBaseImage(data.image);
-                this.showToast("Text Layer Merged Successfully", "🔤");
+                if (this.canvasTextBox) this.canvasTextBox.style.display = "none";
+                if (this.textOptionsBar) this.textOptionsBar.style.display = "none";
+                const moveBtn = document.querySelector(".ps-tbtn[title*='Move']");
+                if (moveBtn) this.activateToolGroup(moveBtn, "move");
+                this.showToast("تم تطبيق ودمج النص مع الصورة بنجاح", "🔤");
             } else {
                 alert("Text rendering error: " + (data.message || "Failed"));
             }
@@ -1471,31 +1723,117 @@ class PhotoshopApp {
         }
     }
 
-    // 2. Cutout & Background Removal (GrabCut AI)
-    async removeBackground() {
-        if (!this.rawImageBase64) return;
-        this.showToast("Extracting Subject with GrabCut AI...", "✂️");
+    // 2. Cutout & Background Removal Suite (GrabCut AI & Dual Threshold)
+    removeBackground() {
+        this.activateBackgroundRemovalTool();
+    }
 
-        try {
-            const resp = await fetch("http://127.0.0.1:5001/api/process", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    image: this.rawImageBase64,
-                    operation: "remove_background",
-                    params: { margin: 15 }
-                })
-            });
-            const data = await resp.json();
-            if (data.status === "success") {
-                this.commitNewBaseImage(data.image);
-                this.showToast("Background Removed (Transparent Alpha PNG)", "✂️");
-            } else {
-                alert("Background removal error: " + (data.message || "Failed"));
-            }
-        } catch (e) {
-            console.error("Remove background error:", e);
+    activateBackgroundRemovalTool(btn = null) {
+        if (!btn) btn = document.getElementById("btnCutoutTool");
+        if (btn) {
+            this.activateToolGroup(btn, "cutout");
+        } else {
+            this.setCutoutMode(this.activeCutoutMode || "grabcut");
         }
+    }
+
+    setCutoutMode(mode = "grabcut") {
+        this.activeCutoutMode = mode;
+        if (mode === "grabcut") {
+            const margin = this.activeParams && this.activeParams.margin !== undefined ? this.activeParams.margin : 15;
+            const iterations = this.activeParams && this.activeParams.iterations !== undefined ? this.activeParams.iterations : 5;
+            const sigma = this.activeParams && this.activeParams.sigma !== undefined ? this.activeParams.sigma : 1.2;
+
+            const controlsHtml = `
+                <div style="background:#171717; border:1px solid #2a2a2a; border-radius:5px; padding:8px; margin-bottom:8px;">
+                    <div style="font-size:11px; font-weight:700; color:#00e5ff; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between;">
+                        <span>✂️ موازنة وتحكم تفريغ الخلفية</span>
+                        <span style="font-size:9px; background:#003344; color:#00e5ff; padding:1px 5px; border-radius:3px;">GrabCut AI</span>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px; margin-bottom:10px;">
+                        <button type="button" class="ps-btn ps-btn-accent" style="font-size:10px; padding:4px 3px; font-weight:bold;" onclick="app.setCutoutMode('grabcut')">🤖 عزل ذكي (GrabCut)</button>
+                        <button type="button" class="ps-btn" style="font-size:10px; padding:4px 3px;" onclick="app.setCutoutMode('threshold')">🎚️ العتبة الثنائية T1/T2</button>
+                    </div>
+
+                    <div class="ps-prop-row">
+                        <span>هامش الإطار المحيط (Margin):</span>
+                        <span id="val_margin" style="color:#00e5ff; font-weight:700;">${margin}px</span>
+                    </div>
+                    <input type="range" class="ps-range" min="3" max="60" value="${margin}" data-param="margin">
+
+                    <div class="ps-prop-row">
+                        <span>دورات طاقة التجزئة (Iterations):</span>
+                        <span id="val_iterations" style="color:#00e5ff; font-weight:700;">${iterations}</span>
+                    </div>
+                    <input type="range" class="ps-range" min="1" max="10" value="${iterations}" data-param="iterations">
+
+                    <div class="ps-prop-row">
+                        <span>تنعيم الحواف وصقل القناع (σ):</span>
+                        <span id="val_sigma" style="color:#00e5ff; font-weight:700;">${sigma}</span>
+                    </div>
+                    <input type="range" class="ps-range" min="0.1" max="4.0" step="0.1" value="${sigma}" data-param="sigma">
+
+                    <div style="margin-top:10px; display:flex; flex-direction:column; gap:5px;">
+                        <button type="button" class="ps-btn ps-btn-accent" style="width:100%; padding:6px 6px; font-size:11px; font-weight:bold; background:#00b4d8; color:#000;" onclick="app.commitCurrentProcessedAsBase('تفريغ وعزل الخلفية الذكي (GrabCut)')">✓ قص واعتماد النتيجة (Commit Cutout)</button>
+                        <div style="display:flex; gap:4px;">
+                            <button type="button" class="ps-btn" style="flex:1; font-size:10px; padding:4px;" onclick="app.openBgReplaceModal()">🌅 استبدال الخلفية</button>
+                            <button type="button" class="ps-btn" style="flex:1; font-size:10px; padding:4px;" onclick="app.resetCutout()">↩ إعادة ضبط</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            this.setFilter("remove_background", { margin, iterations, sigma }, "✂️ تفريغ الخلفية الذكي (GrabCut AI)", controlsHtml);
+        } else {
+            const t1 = this.activeParams && this.activeParams.t1 !== undefined ? this.activeParams.t1 : 50;
+            const t2 = this.activeParams && this.activeParams.t2 !== undefined ? this.activeParams.t2 : 150;
+            const sigma = this.activeParams && this.activeParams.sigma !== undefined ? this.activeParams.sigma : 1.4;
+
+            const controlsHtml = `
+                <div style="background:#171717; border:1px solid #2a2a2a; border-radius:5px; padding:8px; margin-bottom:8px;">
+                    <div style="font-size:11px; font-weight:700; color:#00e5ff; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between;">
+                        <span>✂️ موازنة وتحكم تفريغ الخلفية</span>
+                        <span style="font-size:9px; background:#003344; color:#00e5ff; padding:1px 5px; border-radius:3px;">Dual Threshold</span>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px; margin-bottom:10px;">
+                        <button type="button" class="ps-btn" style="font-size:10px; padding:4px 3px;" onclick="app.setCutoutMode('grabcut')">🤖 عزل ذكي (GrabCut)</button>
+                        <button type="button" class="ps-btn ps-btn-accent" style="font-size:10px; padding:4px 3px; font-weight:bold;" onclick="app.setCutoutMode('threshold')">🎚️ العتبة الثنائية T1/T2</button>
+                    </div>
+
+                    <div class="ps-prop-row">
+                        <span>العتبة العليا (High T2):</span>
+                        <span id="val_t2" style="color:#00e5ff; font-weight:700;">${t2}</span>
+                    </div>
+                    <input type="range" class="ps-range" min="0" max="255" value="${t2}" data-param="t2">
+
+                    <div class="ps-prop-row">
+                        <span>العتبة السفلى (Low T1):</span>
+                        <span id="val_t1" style="color:#00e5ff; font-weight:700;">${t1}</span>
+                    </div>
+                    <input type="range" class="ps-range" min="0" max="255" value="${t1}" data-param="t1">
+
+                    <div class="ps-prop-row">
+                        <span>صقل وتنعيم القناع (σ):</span>
+                        <span id="val_sigma" style="color:#00e5ff; font-weight:700;">${sigma}</span>
+                    </div>
+                    <input type="range" class="ps-range" min="0.1" max="4.0" step="0.1" value="${sigma}" data-param="sigma">
+
+                    <div style="margin-top:10px; display:flex; flex-direction:column; gap:5px;">
+                        <button type="button" class="ps-btn ps-btn-accent" style="width:100%; padding:6px 6px; font-size:11px; font-weight:bold; background:#00b4d8; color:#000;" onclick="app.commitCurrentProcessedAsBase('عزل وقص الخلفية بالعتبة')">✓ قص واعتماد النتيجة (Commit Cutout)</button>
+                        <div style="display:flex; gap:4px;">
+                            <button type="button" class="ps-btn" style="flex:1; font-size:10px; padding:4px;" onclick="app.openBgReplaceModal()">🌅 استبدال الخلفية</button>
+                            <button type="button" class="ps-btn" style="flex:1; font-size:10px; padding:4px;" onclick="app.resetCutout()">↩ إعادة ضبط</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            this.setFilter("threshold_cut", { t1, t2, sigma, mode: "band" }, "✂️ عزل الخلفية بالعتبة الثنائية", controlsHtml);
+        }
+    }
+
+    resetCutout() {
+        this.setFilter("none", {}, "Original Image", `<div style='color:#888; font-size:11px; padding:10px 0; text-align:center;'>🖼️ الصورة الأصلية (بدون فلاتر).<br>اختر أي فلتر أو أداة من شريط الأدوات لتطبيقه.</div>`);
+        const moveBtn = document.querySelector(".ps-tbtn[title*='Move']");
+        if (moveBtn) this.activateToolGroup(moveBtn, "move");
     }
 
     // 3. Background Replacement
@@ -1657,7 +1995,7 @@ class PhotoshopApp {
                 canvas.height = h;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, w, h);
-                
+
                 this.blendSecondImageBase64 = canvas.toDataURL('image/jpeg', 0.9);
                 if (this.blendThumb2) {
                     this.blendThumb2.src = this.blendSecondImageBase64;
@@ -1800,7 +2138,7 @@ class PhotoshopApp {
         reader.onload = (event) => {
             const img = new Image();
             img.onload = () => {
-                const maxDim = 1000; 
+                const maxDim = 1000;
                 let w = img.width;
                 let h = img.height;
                 if (w > maxDim || h > maxDim) {
@@ -1813,7 +2151,7 @@ class PhotoshopApp {
                 canvas.height = h;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, w, h);
-                
+
                 // Use JPEG 0.9 to greatly reduce base64 size and prevent PHP POST max_size errors
                 this.collageSlotImages[this.collageActiveSlotIndex] = canvas.toDataURL('image/jpeg', 0.9);
                 this.renderCollageSlots();
@@ -1880,7 +2218,21 @@ class PhotoshopApp {
         }
     }
 
-    commitNewBaseImage(newBase64) {
+    commitCurrentProcessedAsBase(description = "اعتماد وقص الصورة") {
+        if (!this.processedImageBase64) return;
+        this.commitNewBaseImage(this.processedImageBase64, description);
+        this.showToast("تم قص واعتماد الصورة كطبقة أساسية بنجاح", "✂️");
+    }
+
+    activateThresholdCutout() {
+        this.activateBackgroundRemovalTool();
+        this.setCutoutMode("threshold");
+    }
+
+    commitNewBaseImage(newBase64, description = "Base Image Modification") {
+        if (!this.isRestoringHistory && this.rawImageBase64) {
+            this.pushUndoSnapshot(description);
+        }
         this.rawImageBase64 = newBase64;
         this.canvasRaw.src = newBase64;
         const img = new Image();
@@ -1909,7 +2261,7 @@ class PhotoshopApp {
         if (!this.canvasRaw || !this.canvasRaw.naturalWidth) return;
         const imgW = this.canvasRaw.naturalWidth;
         const imgH = this.canvasRaw.naturalHeight;
-        
+
         const padX = imgW * 0.1;
         const padY = imgH * 0.1;
         this.cropBox = {
@@ -2135,8 +2487,8 @@ class PhotoshopApp {
         if (!this.exportModal) return;
         this.exportModal.style.display = "flex";
 
-        const activeImg = (this.processedImageBase64 && this.canvasProcessed && this.canvasProcessed.src) 
-            ? this.canvasProcessed 
+        const activeImg = (this.processedImageBase64 && this.canvasProcessed && this.canvasProcessed.src)
+            ? this.canvasProcessed
             : this.canvasRaw;
         const w = activeImg ? activeImg.naturalWidth : 800;
         const h = activeImg ? activeImg.naturalHeight : 600;
@@ -2177,8 +2529,8 @@ class PhotoshopApp {
 
     updateExportSizeEstimate() {
         if (!this.exportSizeEstimate) return;
-        const activeImg = (this.processedImageBase64 && this.canvasProcessed && this.canvasProcessed.src) 
-            ? this.canvasProcessed 
+        const activeImg = (this.processedImageBase64 && this.canvasProcessed && this.canvasProcessed.src)
+            ? this.canvasProcessed
             : this.canvasRaw;
         const w = activeImg ? activeImg.naturalWidth : 800;
         const h = activeImg ? activeImg.naturalHeight : 600;
@@ -2257,8 +2609,8 @@ class PhotoshopApp {
         const filename = `${name}.${fmt === 'jpeg' ? 'jpg' : fmt}`;
 
         const exportCanvas = document.createElement("canvas");
-        const activeImg = (this.processedImageBase64 && this.canvasProcessed && this.canvasProcessed.src) 
-            ? this.canvasProcessed 
+        const activeImg = (this.processedImageBase64 && this.canvasProcessed && this.canvasProcessed.src)
+            ? this.canvasProcessed
             : this.canvasRaw;
 
         if (!activeImg || !activeImg.naturalWidth) {
@@ -2528,6 +2880,111 @@ class PhotoshopApp {
                 this.isDraggingCrop = false;
                 this.isResizingCrop = false;
                 this.activeCropHandle = null;
+            });
+        }
+    }
+
+    initTextBoxEvents() {
+        if (!this.canvasTextBox) return;
+
+        // 1. Dragging the Text Box by its header
+        let isDraggingBox = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let initialLeft = 50;
+        let initialTop = 50;
+
+        if (this.canvasTextBoxHeader) {
+            this.canvasTextBoxHeader.addEventListener("mousedown", (e) => {
+                if (e.target.closest && e.target.closest(".ps-text-box-actions")) return;
+                isDraggingBox = true;
+                dragStartX = e.clientX;
+                dragStartY = e.clientY;
+                initialLeft = parseFloat(this.canvasTextBox.style.left) || 50;
+                initialTop = parseFloat(this.canvasTextBox.style.top) || 50;
+                e.stopPropagation();
+                e.preventDefault();
+            });
+
+            window.addEventListener("mousemove", (e) => {
+                if (!isDraggingBox || !this.canvasRaw) return;
+                const rect = this.canvasRaw.getBoundingClientRect();
+                const deltaX = (e.clientX - dragStartX) / (this.zoomScale || 1.0);
+                const deltaY = (e.clientY - dragStartY) / (this.zoomScale || 1.0);
+                const boxW = this.canvasTextBox.offsetWidth || 320;
+                const boxH = this.canvasTextBox.offsetHeight || 140;
+
+                let newLeft = Math.max(0, Math.min(rect.width - boxW, initialLeft + deltaX));
+                let newTop = Math.max(0, Math.min(rect.height - boxH, initialTop + deltaY));
+
+                this.canvasTextBox.style.left = `${newLeft}px`;
+                this.canvasTextBox.style.top = `${newTop}px`;
+
+                const scaleX = this.canvasRaw.naturalWidth / rect.width;
+                const scaleY = this.canvasRaw.naturalHeight / rect.height;
+                this.textCoords.x = Math.max(0, Math.round(newLeft * scaleX));
+                this.textCoords.y = Math.max(0, Math.round((newTop + 25) * scaleY));
+            });
+
+            window.addEventListener("mouseup", () => {
+                isDraggingBox = false;
+            });
+        }
+
+        // 2. Synchronize inputs between Canvas Text Box and Top Options Bar
+        if (this.canvasTextInput) {
+            this.canvasTextInput.addEventListener("input", (e) => {
+                if (this.textOverlayInput) this.textOverlayInput.value = e.target.value;
+            });
+            this.canvasTextInput.addEventListener("keydown", (e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    this.applyTextToImage();
+                } else if (e.key === "Escape") {
+                    this.cancelTextTool();
+                }
+            });
+        }
+        if (this.textOverlayInput) {
+            this.textOverlayInput.addEventListener("input", (e) => {
+                if (this.canvasTextInput) this.canvasTextInput.value = e.target.value;
+            });
+        }
+
+        if (this.canvasTextSize) {
+            this.canvasTextSize.addEventListener("input", (e) => {
+                if (this.textFontSize) this.textFontSize.value = e.target.value;
+            });
+        }
+        if (this.textFontSize) {
+            this.textFontSize.addEventListener("input", (e) => {
+                if (this.canvasTextSize) this.canvasTextSize.value = e.target.value;
+            });
+        }
+
+        if (this.canvasTextColor) {
+            this.canvasTextColor.addEventListener("input", (e) => {
+                if (this.textOverlayColor) this.textOverlayColor.value = e.target.value;
+                if (this.canvasTextInput) this.canvasTextInput.style.color = e.target.value;
+            });
+        }
+        if (this.textOverlayColor) {
+            this.textOverlayColor.addEventListener("input", (e) => {
+                if (this.canvasTextColor) this.canvasTextColor.value = e.target.value;
+                if (this.canvasTextInput) this.canvasTextInput.style.color = e.target.value;
+            });
+        }
+
+        if (this.canvasTextFont) {
+            this.canvasTextFont.addEventListener("change", (e) => {
+                if (this.textFontFamily) this.textFontFamily.value = e.target.value;
+                if (this.canvasTextInput) this.canvasTextInput.style.fontFamily = e.target.value;
+            });
+        }
+        if (this.textFontFamily) {
+            this.textFontFamily.addEventListener("change", (e) => {
+                if (this.canvasTextFont) this.canvasTextFont.value = e.target.value;
+                if (this.canvasTextInput) this.canvasTextInput.style.fontFamily = e.target.value;
             });
         }
     }

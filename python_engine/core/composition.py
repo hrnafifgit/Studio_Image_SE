@@ -5,23 +5,23 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from core.base import ProcessingResult
 
-def remove_background(image: np.ndarray, margin: int = 15) -> ProcessingResult:
+def remove_background(image: np.ndarray, margin: int = 15, iterations: int = 5, sigma: float = 1.2) -> ProcessingResult:
     """
     عزل وقص الخلفية عبر خوارزمية GrabCut المتقدمة:
-    تحديد العنصر الأساسي وتفريغ الخلفية لتصبح شفافة (BGRA)
+    تحديد العنصر الأساسي وتفريغ الخلفية لتصبح شفافة (BGRA) مع موازنة الهامش والتكرار والتنعيم
     """
     t0 = time.perf_counter()
     rows, cols = image.shape[:2]
     
-    margin = max(5, min(min(rows, cols) // 4, int(margin)))
+    margin = max(3, min(min(rows, cols) // 4, int(margin)))
     rect = (margin, margin, cols - 2 * margin, rows - 2 * margin)
     
     mask = np.zeros((rows, cols), np.uint8)
     bgd_model = np.zeros((1, 65), np.float64)
     fgd_model = np.zeros((1, 65), np.float64)
     
-    # 5 iterations of GrabCut
-    cv2.grabCut(image, mask, rect, bgd_model, fgd_model, 5, cv2.GC_INIT_WITH_RECT)
+    iter_count = max(1, min(10, int(iterations)))
+    cv2.grabCut(image, mask, rect, bgd_model, fgd_model, iter_count, cv2.GC_INIT_WITH_RECT)
     
     # 0 and 2 are background, 1 and 3 are foreground
     fg_mask = np.where((mask == cv2.GC_FGD) | (mask == cv2.GC_PR_FGD), 255, 0).astype(np.uint8)
@@ -29,14 +29,17 @@ def remove_background(image: np.ndarray, margin: int = 15) -> ProcessingResult:
     # تنعيم الحواف (Feathering & Anti-aliasing)
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
     fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_CLOSE, kernel)
-    fg_mask = cv2.GaussianBlur(fg_mask, (5, 5), 1.2)
+    
+    sig = max(0.1, float(sigma))
+    k_val = max(3, int(round(sig * 4)) | 1)
+    fg_mask = cv2.GaussianBlur(fg_mask, (k_val, k_val), sig)
     
     # دمج القناة الشفافة Alpha
     bgra = cv2.cvtColor(image, cv2.COLOR_BGR2BGRA)
     bgra[:, :, 3] = fg_mask
     
-    formula = "GrabCut Energy Minimization: E(α,k,θ,z) = U(α,k,θ,z) + V(α,z) | Foreground Segmentation"
-    code = "# Background Removal with GrabCut\nmask = np.zeros(img.shape[:2], np.uint8)\nrect = (15, 15, cols-30, rows-30)\ncv2.grabCut(img, mask, rect, bgd, fgd, 5, cv2.GC_INIT_WITH_RECT)\nalpha = np.where((mask==1)|(mask==3), 255, 0).astype(np.uint8)\nresult_bgra = cv2.merge([b, g, r, alpha])"
+    formula = f"GrabCut Energy Minimization: Iter={iter_count}, Margin={margin}px, σ={sig} | Foreground Segmentation"
+    code = f"# Interactive Background Removal with GrabCut\nrect = ({margin}, {margin}, cols-{margin*2}, rows-{margin*2})\ncv2.grabCut(img, mask, rect, bgd, fgd, {iter_count}, cv2.GC_INIT_WITH_RECT)\nalpha = cv2.GaussianBlur(mask, ({k_val}, {k_val}), {sig})\nresult_bgra = cv2.cvtColor(img, cv2.COLOR_BGR2BGRA)\nresult_bgra[:, :, 3] = alpha"
     
     return ProcessingResult(bgra, formula, code, t0)
 
@@ -400,5 +403,70 @@ def generate_photo_collage(images: list, template: str = "grid_2x2", border_size
     code = f"# DIP Multi-Image Grid Assembly\ncanvas = np.full(({canvas_h}, {canvas_w}, 3), {border_color[:3]}, dtype=np.uint8)\n# Render {len(boxes)} image slots with smart aspect-fill"
     
     return ProcessingResult(canvas, formula, code, t0)
+
+
+def cut_background_by_threshold(image: np.ndarray, t1: int = 50, t2: int = 150, sigma: float = 1.4, mode: str = "band", invert: bool = False) -> ProcessingResult:
+    """
+    عزل وقص الخلفية بالاعتماد على العتبة والمعايير (T1, T2, Gaussian Sigma):
+    - وضع النطاق (Band): عزل العناصر التي تقع كثافتها اللونية بين العتبتين T1 و T2
+    - وضع الحواف (Edge Contours): تحديد حدود العنصر بحواف كاني وملء الجسم وعزل الخلفية
+    """
+    t0 = time.perf_counter()
+    rows, cols = image.shape[:2]
+    
+    # 1. القناة الرمادية
+    if len(image.shape) == 2:
+        gray = image
+    elif image.shape[2] == 4:
+        gray = cv2.cvtColor(image[:, :, :3], cv2.COLOR_BGR2GRAY)
+    else:
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+    # 2. تنعيم جاوس بمعامل السيجما (Gaussian Smoothing)
+    k_val = max(3, int(round(float(sigma) * 4)) | 1)
+    blurred = cv2.GaussianBlur(gray, (k_val, k_val), float(sigma))
+    
+    low = min(int(t1), int(t2))
+    high = max(int(t1), int(t2))
+    
+    if mode == "edges":
+        # عزل الخلفية عبر حواف كاني وملء الكنتور
+        edges = cv2.Canny(blurred, low, high)
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+        closed = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
+        
+        # ملء الكنتورات المغلقة
+        mask = np.zeros((rows, cols), dtype=np.uint8)
+        contours, _ = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if contours:
+            cv2.drawContours(mask, contours, -1, 255, -1)
+        else:
+            mask = cv2.inRange(blurred, low, high)
+    else:
+        # وضع العتبة المزدوجة (Dual Thresholding Mask)
+        mask = cv2.inRange(blurred, low, high)
+        
+    if invert:
+        mask = cv2.bitwise_not(mask)
+        
+    # تنعيم حواف القناع للقص الاحترافي (Feathering)
+    mask = cv2.GaussianBlur(mask, (3, 3), 0.8)
+    
+    # إنشاء صورة BGRA شفافة
+    if len(image.shape) == 2:
+        bgr = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+    elif image.shape[2] == 4:
+        bgr = image[:, :, :3]
+    else:
+        bgr = image
+        
+    bgra = cv2.cvtColor(bgr, cv2.COLOR_BGR2BGRA)
+    bgra[:, :, 3] = mask
+    
+    formula = f"Alpha(x,y) = 255 if {low} ≤ G_σ(x,y) ≤ {high} else 0 | (σ = {sigma})"
+    code = f"# Threshold Background Cutout\nblurred = cv2.GaussianBlur(gray, (5, 5), {sigma})\nmask = cv2.inRange(blurred, {low}, {high})\nresult_bgra = cv2.cvtColor(img, cv2.COLOR_BGR2BGRA)\nresult_bgra[:, :, 3] = mask"
+    
+    return ProcessingResult(bgra, formula, code, t0)
+
 
 

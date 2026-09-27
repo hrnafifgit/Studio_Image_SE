@@ -32,7 +32,8 @@ from core.restoration import (
 from core.composition import (
     remove_background, replace_background,
     render_text_overlay, composite_overlay_image,
-    blend_two_images, generate_photo_collage
+    blend_two_images, generate_photo_collage,
+    cut_background_by_threshold
 )
 
 

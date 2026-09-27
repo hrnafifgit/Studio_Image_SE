@@ -158,9 +158,18 @@ def process():
             res = core.apply_crop(img, x=int(p.get("x", 0)), y=int(p.get("y", 0)), width=int(p.get("width", 100)), height=int(p.get("height", 100)))
 
         # 8. Studio Composition & Superpowers
+        elif op == "threshold_cut":
+            t1 = int(p.get("t1", 50))
+            t2 = int(p.get("t2", 150))
+            sigma = float(p.get("sigma", 1.4))
+            mode = p.get("mode", "band")
+            invert = bool(p.get("invert", False))
+            res = core.cut_background_by_threshold(img, t1=t1, t2=t2, sigma=sigma, mode=mode, invert=invert)
         elif op == "remove_background":
             margin = int(p.get("margin", 15))
-            res = core.remove_background(img, margin=margin)
+            iterations = int(p.get("iterations", 5))
+            sigma = float(p.get("sigma", 1.2))
+            res = core.remove_background(img, margin=margin, iterations=iterations, sigma=sigma)
         elif op == "replace_background":
             bg_type = p.get("bg_type", "color")
             bg_color = p.get("bg_color", [255, 255, 255])
