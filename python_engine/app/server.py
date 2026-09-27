@@ -4,7 +4,7 @@ import time
 import base64
 import cv2
 import numpy as np
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, redirect
 from flask_socketio import SocketIO, emit
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -15,6 +15,10 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
+
+@app.route("/", methods=["GET"])
+def index():
+    return redirect("http://127.0.0.1:8000")
 
 # Disable caching for rapid development
 from PIL import Image, ImageOps
