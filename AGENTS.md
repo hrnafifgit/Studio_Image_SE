@@ -7,7 +7,7 @@
 
 ## 📌 نبذة تعريفية عن المشروع (Project Overview)
 * **اسم المشروع:** VisionCraft - Digital Image Processing (DIP) Studio & AR Mirror
-* **المساق والكلية:** مشروع تخرج المستوى الرابع - قسم هندسة البرمجيات (Software Engineering)، كلية الحاسبات والمعلوماتية - جامعة ذمار.
+* **المساق والكلية:** مشروع تخرج المستوى الرابع - قسم هندسة البرمجيات (Software Engineering)، كلية الحاسبات والعلوم التطبيقية - جامعة إب.
 * **المستودع الرسمي على GitHub:** [`https://github.com/hrnafifgit/Studio_Image_SE.git`](https://github.com/hrnafifgit/Studio_Image_SE.git)
 * **المعمارية التقنية (Architecture):** معمارية خدمات مصغرة ثنائية النواة (Dual-Core Microservices):
   1. **الواجهة والبوابة الخلفية (API Gateway / Frontend):** إطار عمل **Laravel 11** (PHP 8.2+).
