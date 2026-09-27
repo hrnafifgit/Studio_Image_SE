@@ -29,17 +29,20 @@ class ProcessingResult:
             hist_data["g"] = hist_data["gray"]
             hist_data["b"] = hist_data["gray"]
         else:
-            # صورة ملونة BGR
+            # صورة ملونة BGR أو BGRA
             for i, col in enumerate(["b", "g", "r"]):
                 h, _ = np.histogram(img[:, :, i], bins=64, range=(0, 256))
                 hist_data[col] = h.tolist()
-            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            gray = cv2.cvtColor(img[:, :, :3], cv2.COLOR_BGR2GRAY)
             h_gray, _ = np.histogram(gray, bins=64, range=(0, 256))
             hist_data["gray"] = h_gray.tolist()
         return hist_data
 
     def _calculate_stats(self, img: np.ndarray) -> dict:
-        gray = img if len(img.shape) == 2 else cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        if len(img.shape) == 2 or img.shape[2] == 1:
+            gray = img if len(img.shape) == 2 else img[:, :, 0]
+        else:
+            gray = cv2.cvtColor(img[:, :, :3], cv2.COLOR_BGR2GRAY)
         mean_val = float(np.mean(gray))
         std_val = float(np.std(gray))
         median_val = float(np.median(gray))

@@ -1374,3 +1374,131 @@ body.zen-mode .ps-menubar {
     padding: 2px 6px;
     width: 100%;
 }
+
+/* ==========================================================================
+   INTERACTIVE ON-CANVAS TEXT BOX OVERLAY
+   ========================================================================== */
+.ps-canvas-text-box {
+    position: absolute;
+    top: 50px;
+    left: 50px;
+    min-width: 320px;
+    max-width: 440px;
+    background: rgba(18, 24, 38, 0.96);
+    backdrop-filter: blur(12px);
+    border: 1.5px solid #00e5ff;
+    border-radius: 8px;
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.85), 0 0 16px rgba(0, 229, 255, 0.35);
+    z-index: 45;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    line-height: normal;
+    font-size: 12px;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    color: #e6edf3;
+    user-select: none;
+    pointer-events: auto;
+}
+
+.ps-text-box-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: move;
+    padding: 2px 4px 6px 4px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.ps-text-box-title {
+    font-weight: 600;
+    font-size: 12px;
+    color: #00e5ff;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ps-text-box-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.ps-tbtn-action {
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    border: none;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.1s, background 0.15s;
+}
+
+.ps-tbtn-action:hover {
+    transform: scale(1.08);
+}
+
+.ps-tbtn-action.confirm {
+    background: #10b981;
+    color: #ffffff;
+}
+
+.ps-tbtn-action.confirm:hover {
+    background: #059669;
+}
+
+.ps-tbtn-action.cancel {
+    background: #ef4444;
+    color: #ffffff;
+}
+
+.ps-tbtn-action.cancel:hover {
+    background: #dc2626;
+}
+
+.ps-text-box-body {
+    width: 100%;
+}
+
+.ps-text-area {
+    width: 100%;
+    min-height: 60px;
+    box-sizing: border-box;
+    background: rgba(10, 14, 22, 0.9);
+    border: 1px solid rgba(0, 229, 255, 0.4);
+    border-radius: 6px;
+    color: #ffffff;
+    padding: 8px 10px;
+    font-size: 14px;
+    resize: both;
+    outline: none;
+    font-family: inherit;
+    line-height: 1.4;
+}
+
+.ps-text-area:focus {
+    border-color: #00e5ff;
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+}
+
+.ps-text-box-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-top: 2px;
+    font-size: 11px;
+    flex-wrap: wrap;
+}
+
+.ps-text-prop {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #94a3b8;
+}

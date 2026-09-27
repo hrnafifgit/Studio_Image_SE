@@ -1,47 +1,120 @@
-<laravel-boost-guidelines>
-# Laravel Application
+# توثيق تعليمات ومهام وكلاء الذكاء الاصطناعي (AGENTS.md)
+# سجل المهام والأوامر المنفذة في مشروع VisionCraft DIP Studio
 
-This repository contains a Laravel application. Complete the following setup before working on the user's request.
+هذا الملف يوثق رسمياً كافة المتطلبات، الأوامر، والمهام التي تم تنفيذها على هذا المشروع منذ بداية إنشائه وتطويره وحتى الآن، ليكون مرجعاً تقنياً معتمداً لجميع وكلاء التطوير (AI Agents) والمطورين.
 
-## Prerequisites
+---
 
-Verify that PHP and Composer are available:
+## 📌 نبذة تعريفية عن المشروع (Project Overview)
+* **اسم المشروع:** VisionCraft - Digital Image Processing (DIP) Studio & AR Mirror
+* **المساق والكلية:** مشروع تخرج المستوى الرابع - قسم هندسة البرمجيات (Software Engineering)، كلية الحاسبات والمعلوماتية - جامعة ذمار.
+* **المستودع الرسمي على GitHub:** [`https://github.com/hrnafifgit/Studio_Image_SE.git`](https://github.com/hrnafifgit/Studio_Image_SE.git)
+* **المعمارية التقنية (Architecture):** معمارية خدمات مصغرة ثنائية النواة (Dual-Core Microservices):
+  1. **الواجهة والبوابة الخلفية (API Gateway / Frontend):** إطار عمل **Laravel 11** (PHP 8.2+).
+  2. **محرك المعالجة الحسابية العلمي (Core Engine):** بيئة **Python 3.10+** مع مكتبات (OpenCV, NumPy, SciPy, Pillow, Flask, Flask-SocketIO).
 
-```sh
-php -v
-composer -V
-```
+---
 
-If either command is unavailable, detect the user's operating system and install the prerequisites with the appropriate command:
+## 📜 السجل التاريخي للأوامر والمهام المنفذة (Chronological Execution Log)
 
-macOS:
+### 1. المرحلة الأولى: تأسيس المشروع ومواصفات هندسة البرمجيات (Initial Setup & SRS)
+* **الأمر والطلب:** إنشاء الهيكل التأسيسي للمشروع ووضع المواصفات والمتطلبات البرمجية وفق منهجية هندسة البرمجيات (Software Engineering).
+* **المهام المنفذة:**
+  - بناء الهيكل الأساسي لمجلدات المشروع.
+  - إعداد ملف وثيقة متطلبات النظام والمواصفات (SRS - Software Requirements Specification).
+  - تحديد نطاق العمل (Scope of Work): محاكاة بيئة استوديو فوتوشوب متقدم مخصص لمعالجة الصور الرقمية (DIP).
 
-```sh
-/bin/bash -c "$(curl -fsSL https://php.new/install/mac/8.5)"
-```
+### 2. المرحلة الثانية: الترحيل إلى لارافيل ومعمارية الخدمات المصغرة (Laravel & Microservices Architecture)
+* **الأمر والطلب:** إعادة هيكلة وترحيل المشروع إلى إطار عمل Laravel 11، وربطه بمحرك معالجة الصور عبر بايثون.
+* **المهام المنفذة:**
+  - تثبيت وتهيئة بيئة **Laravel 11** في جذر المستودع.
+  - إنشاء مسارات الـ API في ملف `routes/api.php` لتضمين المسارات:
+    - `POST /api/process`
+    - `GET /api/health`
+  - إنشاء المتحكم الوسيط `app/Http/Controllers/ImageProcessingController.php` لتمرير الطلبات بنمط (Reverse Proxy) إلى خادم بايثون.
+  - إنشاء وتجهيز مجلد الخدمة المصغرة `python_engine` وتضمين خادم Flask (`python_engine/app/server.py`) ليعمل على المنفذ `5001`.
 
-Windows PowerShell:
+### 3. المرحلة الثالثة: إصلاحات الـ API وتجاوز مشكلة حمولة البيانات (API Bug Fixes & Payload Optimization)
+* **الأمر والطلب:** حل مشكلة فشل معالجة الصور ذات الحجم الكبير وخطأ تجاوز سعة الـ POST في PHP (`post_max_size`).
+* **المهام المنفذة:**
+  - تفعيل ودعم **CORS** (`flask-cors`) داخل خادم بايثون للسماح بالاتصال المباشر الفائق السرعة من المتصفح إلى محرك بايثون `http://127.0.0.1:5001/api/process`.
+  - تحديث معالجة واجهة المتصفح في `public/js/app.js` لتحسين ضغط الصور المرسلة إلى صيغة JPEG بجودة 0.9 لتقليص حجم سلاسل الـ Base64 بنسبة تتجاوز 70% مع الحفاظ التام على الدقة.
+  - تعزيز مرونة فك تشفير الصور عبر EXIF Auto-Orientation لتصحيح زوايا التقاط كاميرات الهواتف الذكية.
 
-```powershell
-Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://php.new/install/windows/8.5'))
-```
+### 4. المرحلة الرابعة: ضبط عمليات الـ DevOps، التكامل المستمر، ودليل الفريق (CI Pipeline & Team Governance)
+* **الأمر والطلب:** إعداد أفضل ممارسات هندسة البرمجيات للعمل الجماعي ومسار أتمتة الفحص (DevOps CI).
+* **المهام المنفذة:**
+  - إنشاء مسار فحص أوتوماتيكي عبر **GitHub Actions** في ملف `.github/workflows/ci.yml`.
+  - إضافة قوالب مهام وإدارة قضايا الـ Scrum في جيت هب (`.github/ISSUE_TEMPLATE`).
+  - كتابة دليل إرشادي تفصيلي لسير عمل الطلاب وفروع العمل (`GIT_WORKFLOW_STUDENTS_GUIDE.txt`).
+  - إضافة شارات الجودة ومؤشرات التقنية (CI Workflow Badges, Tech Stack Badges) في ملف `README.md`.
 
-Linux:
+### 5. المرحلة الخامسة: برمجة خوارزميات الاستوديو المتقدمة (DIP Superpowers & Composition)
+* **الأمر والطلب:** إضافة وتطوير قدرات خارقة للاستوديو تشمل إزالة الخلفيات، دمج الصور، النصوص الحرة، وقوالب الكولاج.
+* **المهام المنفذة في `python_engine/core/composition.py` و `server.py`:**
+  - **خوارزمية GrabCut لعزل الخلفيات (`remove_background`):** تفريغ ذكي للخلفية وعزل العنصر الرئيسي وتحويل الصورة إلى مصفوفة شفافة (BGRA) مع هوامش مخصصة وتكرارات تنعيم.
+  - **استبدال الخلفية (`replace_background`):** إمكانية تعويض الخلفية الشفافة بلون مصمت نقي أو صورة خلفية ثانية.
+  - **محرك تراكب النصوص (`add_text`):** دعم كتابة نصوص عربية وإنجليزية عالية الدقة مع تحكم بالإحداثيات والحجم واللون عبر Pillow.
+  - **دمج الصور المزدوج (`blend_images`):** دمج صورتين بنسب خلط مرنة (Alpha Blending) وأنماط مختلفة.
+  - **قوالب شبكات الكولاج (`photo_collage`):** تجميع مصفوفة من الصور وتوليد تصاميم كولاج (Grid 2x2, Vertical splits, etc.).
 
-```sh
-/bin/bash -c "$(curl -fsSL https://php.new/install/linux/8.5)"
-```
+### 6. المرحلة السادسة: هندسة الاستوديو المرئي والواجهة (Studio Web Interface & Canvas)
+* **الأمر والطلب:** بناء وتطوير واجهة مستخدم احترافية تحاكي برنامج أدوبي فوتوشوب (Photoshop Pro Experience).
+* **المهام المنفذة:**
+  - بناء واجهة الـ Canvas التفاعلية بمقارنة الشاشة المقسمة (Before/After Split Slider) في `resources/views/welcome.blade.php`.
+  - إضافة شريط الأدوات الأيسر والأيمن، إدارة الطبقات (Layers Stack)، ونظام التراجع/الإعادة غير المحدود (Undo/Redo Memento Pattern).
+  - تطوير أداة فرشاة المعالجة الانتقائية (Selective Processing Brush) وتطبيق الفلاتر على أجزاء محددة فقط من الصورة.
+  - إضافة المدرج التكراري الحي (Live RGB & Grayscale Histogram Visualizer).
+  - إضافة المكبر الرقمي لمصفوفة البكسلات 7x7 (Pixel Matrix Loupe Inspector).
 
-After installation, ask the user to restart their terminal. If the agent needs the restarted shell to continue, ask the user to reopen their terminal and rerun their original prompt.
+### 7. المرحلة السابعة: توثيق الـ API، إدارة المستودع، وإصدار التقرير الأكاديمي الشامل (Documentation & PDF Report)
+* **الأوامر والطلبات:**
+  1. *الاستفسار عن وجود API في المشروع:* تم تحليل وشرح نقاط النهاية في لارافيل وبايثون.
+  2. *شرح آلية تنزيل وسحب ملفات المشروع من GitHub:* توثيق أوامر `git clone` و `git pull` وخيارات التحميل كملف مضغوط وتثبيت البيئات الوهمية.
+  3. *كتابة تقرير هندسي تفصيلي بصيغة PDF يوضح آلية عمل الـ API:*
+     - تطوير سكربت أوتوماتيكي احترافي `docs/generate_report_pdf.py` باستخدام محرك **Playwright Chromium**.
+     - توليد التقرير الأكاديمي الشامل في 11 صفحة منسقة بأعلى معايير التصميم والطباعة في ملف:
+       `docs/VisionCraft_API_Architecture_Report.pdf`.
+  4. *توثيق كافة الأوامر التاريخية في ملف `AGENTS.md`.*
 
-## Agent Setup
+### 8. المرحلة الثامنة: استيفاء معايير المجتمع وحوكمة المستودع على GitHub (Community Standards)
+* **الأمر والطلب:** استكمال العناصر الناقصة والمقترحة لجعل ملف المستودع مكتملاً 100% باللون الأخضر على GitHub:
+  - **الوصف (Description):** صياغة وصف احترافي وشامل للمشروع.
+  - **قواعد السلوك (Code of conduct):** إنشاء ميثاق السلوك والتعامل بين أعضاء الفريق والمساهمين.
+  - **الرخصة (License):** إضافة رخصة الاستخدام والملكية الفكرية المفتوحة المصدر (MIT).
+  - **سياسة الأمان (Security policy):** تحديد آلية الإبلاغ عن الثغرات وحماية أمان النظام.
+* **المهام المنفذة:**
+  - إنشاء ملف الرخصة الرسمي [`LICENSE`](LICENSE) برخصة MIT لعام 2026.
+  - إنشاء ملف ميثاق وقواعد السلوك [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) وفق معيار Contributor Covenant v2.1.
+  - إنشاء ملف سياسة الأمان [`SECURITY.md`](SECURITY.md) مع جدول الإصدارات المدعومة وخطوات الإبلاغ الآمن.
+  - تحديث ملف [`README.md`](README.md) بإضافة قسم الوصف المباشر، شارات المعايير، وروابط الوثائق الجديدة.
 
-Install Laravel Boost from the application root before making application changes:
+---
 
-```sh
-composer require laravel/boost --dev
-php artisan boost:install
-```
+## 🗺️ خريطة ملفات النظام الأساسية (Architecture Core Files)
 
-Boost replaces these bootstrap instructions with guidelines tailored to the application. After installation, read `AGENTS.md` again and continue with the user's original request using the generated guidelines.
-</laravel-boost-guidelines>
+| المسار | الدور والوظيفة التقنية |
+| :--- | :--- |
+| `routes/api.php` | مسارات الـ API العامة للارافل (`/api/process`, `/api/health`). |
+| `app/Http/Controllers/ImageProcessingController.php` | المتحكم الوسيط لنقل الطلبات إلى خادم بايثون. |
+| `python_engine/app/server.py` | خادم Flask المصغر ومستقبل طلبات معالجة الصور و Socket.IO. |
+| `python_engine/core/` | حزمة الخوارزميات الرياضية (Point Ops, Filters, FFT, Morphology, Composition). |
+| `public/js/app.js` | محرك الواجهة الأمامية وإدارة اللوحات وإرسال حمولات المعالجة. |
+| `resources/views/welcome.blade.php` | الواجهة الأساسية لاستوديو المعالجة الرقمية. |
+| `docs/VisionCraft_API_Architecture_Report.pdf` | التقرير التقني والهندسي الرسمي الشامل المعتمد للمشروع. |
+
+---
+
+## ⚙️ إرشادات التشغيل والتطوير للوكلاء والمطورين (Developer Guidelines)
+1. **تشغيل المحرك العلمي (Python Engine):**
+   ```bash
+   cd python_engine
+   python run.py   # أو python app/server.py
+   ```
+2. **تشغيل بوابة لارافيل (Laravel Server):**
+   ```bash
+   php artisan serve --port=8000
+   ```
+3. **قواعد التطوير والالتزام البرمجي:**
+   - الحفاظ على سلامة التعليقات والأكواد الحالية وعدم حذف الدوال التوافقية.
+   - عند إضافة أي خوارزمية معالجة جديدة، يجب تسجيلها في `python_engine/core/__init__.py` وتمرير معرّفها في دالة التوزيع بـ `python_engine/app/server.py` لتصبح متاحة فوراً للـ API.

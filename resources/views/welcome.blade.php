@@ -49,6 +49,9 @@
             <div class="ps-menu-dropdown">
                 <span class="ps-menu-item">Edit</span>
                 <div class="ps-dropdown-content">
+                    <div class="ps-dropdown-item" onclick="app.undo()"><span style="color:#00e5ff;">↩️ Undo (تراجع)</span><span style="color:#00e5ff;">Ctrl+Z</span></div>
+                    <div class="ps-dropdown-item" onclick="app.redo()"><span style="color:#00e5ff;">↪️ Redo (إعادة)</span><span style="color:#00e5ff;">Ctrl+Y / Ctrl+Shift+Z</span></div>
+                    <div class="ps-dropdown-separator"></div>
                     <div class="ps-dropdown-item" onclick="app.copyPythonCode()"><span>Copy Generated Python Code</span><span style="color:#888;">Ctrl+C</span></div>
                     <div class="ps-dropdown-item" onclick="app.setFilter('none', {}, 'Original Image', '')"><span>Revert to Original Image</span><span style="color:#888;">F12</span></div>
                 </div>
@@ -60,7 +63,7 @@
                 <div class="ps-dropdown-content">
                     <div class="ps-dropdown-item" onclick="app.openCollageModal()"><span>📐 قوالب الكولاج وشبكات دمج الصور (Collage Grid)...</span><span style="color:#f59e0b;">Ctrl+Shift+G</span></div>
                     <div class="ps-dropdown-item" onclick="app.openBlendModal()"><span>🖼️ دمج ومزج صورتين (DIP Blend)...</span><span style="color:#10b981;">Ctrl+Shift+M</span></div>
-                    <div class="ps-dropdown-item" onclick="app.removeBackground()"><span>✂️ تفريغ الخلفية لتصبح شفافة (GrabCut AI)</span><span style="color:#00e5ff;">Ctrl+Shift+B</span></div>
+                    <div class="ps-dropdown-item" onclick="app.activateBackgroundRemovalTool()"><span style="color:#00e5ff;">✂️ موازنة وتفريغ عزل الخلفية (Background Removal)...</span><span style="color:#00e5ff;">Ctrl+Shift+B</span></div>
                     <div class="ps-dropdown-item" onclick="app.openBgReplaceModal()"><span>🌅 استبدال الخلفية بصورة أخرى أو استوديو...</span></div>
                     <div class="ps-dropdown-item" onclick="app.openAccessoriesModal()"><span style="color:#c084fc;">👓 تجربة الملحقات الافتراضية (AR Virtual Try-On)...</span></div>
                     <div class="ps-dropdown-separator"></div>
@@ -146,19 +149,14 @@
 
         <div class="ps-menu-right">
             <span id="perfBadge" style="background:#003426; border:1px solid #00875a; color:#36b37e; font-size:10px; padding:2px 8px; border-radius:3px; font-family:'Fira Code'; font-weight:600;">⚡ Ready</span>
-            <select class="ps-workspace-select">
-                <option>Image Processing Studio</option>
-                <option>Essentials</option>
-                <option>Photography</option>
-            </select>
         </div>
     </div>
 
     <!-- 2. TOOL OPTIONS BAR -->
     <div class="ps-optionsbar">
         <div class="ps-tool-active-icon">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="#1473e6"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-            <span id="filterTitle" style="color:#ffffff;">Canny Multi-stage Edge Detector</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="#00e5ff"><path d="M10 9h4V6h3l-5-5-5 5h3v3zm-1 1H6V7l-5 5 5 5v-3h3v-4zm11 2l-5-5v3h-3v4h3v3l5-5zm-9 3h-4v3H3l5 5 5-5h-3v-3z"/></svg>
+            <span id="filterTitle" style="color:#ffffff;">Original Image</span>
         </div>
         <div style="width:1px; height:18px; background:var(--ps-border);"></div>
         
@@ -273,8 +271,15 @@
             
             <!-- 1. Move Tool -->
             <div class="ps-tool-group">
-                <div class="ps-tbtn" title="Move Tool (V)" onclick="app.activateToolGroup(this, 'move')">
+                <div class="ps-tbtn active" title="Move Tool (V)" onclick="app.activateToolGroup(this, 'move')">
                     <svg viewBox="0 0 24 24"><path d="M10 9h4V6h3l-5-5-5 5h3v3zm-1 1H6V7l-5 5 5 5v-3h3v-4zm11 2l-5-5v3h-3v4h3v3l5-5zm-9 3h-4v3H3l5 5 5-5h-3v-3z"/></svg>
+                </div>
+            </div>
+
+            <!-- 1.2 Cutout & Background Removal Tool -->
+            <div class="ps-tool-group">
+                <div class="ps-tbtn" id="btnCutoutTool" title="أداة موازنة وتفريغ عزل الخلفية (Background Removal Tool) - Ctrl+Shift+B" onclick="app.activateBackgroundRemovalTool(this)">
+                    <svg viewBox="0 0 24 24"><path d="M9.64 7.64c.23-.5.36-1.05.36-1.64 0-2.21-1.79-4-4-4S2 3.79 2 6s1.79 4 4 4c.59 0 1.14-.13 1.64-.36L10 12l-2.36 2.36C7.14 14.13 6.59 14 6 14c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4c0-.59-.13-1.14-.36-1.64L12 14l7 7h3v-1L9.64 7.64zM6 8c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm0 12c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm6-7.5c-.28 0-.5-.22-.5-.5s.22-.5.5-.5.5.22.5.5-.22.5-.5.5zM19 3l-6 6 2 2 7-7V3h-3z"/></svg>
                 </div>
             </div>
 
@@ -326,6 +331,9 @@
                     <div class="ps-flyout-item" onclick="app.selectSubTool('log', {c: 1.0}, 'Logarithmic Transform', '<div class=\'ps-prop-row\'><span>Scaling (c):</span><span id=\'val_c\' style=\'color:#fff;\'>1.0</span></div><input type=\'range\' class=\'ps-range\' min=\'0.2\' max=\'2.5\' step=\'0.1\' value=\'1.0\' data-param=\'c\'>', 'groupPoint')">
                         <span class="ps-flyout-item-name">🪵 التحويل اللوغاريتمي (Log Transform)</span><span class="ps-flyout-item-badge">s=log(1+r)</span>
                     </div>
+                    <div class="ps-flyout-item" onclick="app.activateThresholdCutout()">
+                        <span class="ps-flyout-item-name">✂️ عزل وقص الخلفية بالعتبة (Threshold Cutout)</span><span class="ps-flyout-item-badge">T1/T2</span>
+                    </div>
                     <div class="ps-flyout-item" onclick="app.selectSubTool('threshold', {threshold: 128, method: 'binary'}, 'Binary Thresholding', '<div class=\'ps-prop-row\'><span>Threshold (T):</span><span id=\'val_threshold\' style=\'color:#fff;\'>128</span></div><input type=\'range\' class=\'ps-range\' min=\'0\' max=\'255\' value=\'128\' data-param=\'threshold\'>', 'groupPoint')">
                         <span class="ps-flyout-item-name">🔲 العتبة الثنائية (Binary Threshold)</span><span class="ps-flyout-item-badge">T</span>
                     </div>
@@ -340,7 +348,7 @@
 
             <!-- 4. Edge Detection Group -->
             <div class="ps-tool-group" id="groupEdges">
-                <div class="ps-tbtn active has-flyout" id="btnGroupEdges" title="Edge Detection Tools (E)" onclick="app.toggleFlyout(this)">
+                <div class="ps-tbtn has-flyout" id="btnGroupEdges" title="Edge Detection Tools (E)" onclick="app.toggleFlyout(this)">
                     <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
                 </div>
                 <div class="ps-tool-flyout">
@@ -538,7 +546,6 @@
             <div class="ps-doc-tabs">
                 <div class="ps-tab">
                     <span id="docTabTitle">benchmark.png @ 100% (RGB/8#)*</span>
-                    <span class="ps-tab-close" onclick="alert('Cannot close primary document.')">✕</span>
                 </div>
             </div>
 
@@ -583,6 +590,40 @@
                                 <div class="ps-crop-handle sw" data-handle="sw"></div>
                                 <div class="ps-crop-handle se" data-handle="se"></div>
                                 <div class="ps-crop-dim" id="cropBoxDim">0 × 0</div>
+                            </div>
+                        </div>
+
+                        <!-- Interactive On-Canvas Text Box Overlay -->
+                        <div id="canvasTextBox" class="ps-canvas-text-box" style="display:none;">
+                            <div class="ps-text-box-header" id="canvasTextBoxHeader">
+                                <span class="ps-text-box-title">🔤 منطقة كتابة النص (Text Box)</span>
+                                <div class="ps-text-box-actions">
+                                    <button type="button" class="ps-tbtn-action confirm" onclick="app.applyTextToImage()" title="تطبيق النص على الصورة (Enter)">✓</button>
+                                    <button type="button" class="ps-tbtn-action cancel" onclick="app.cancelTextTool()" title="إلغاء (Esc)">✕</button>
+                                </div>
+                            </div>
+                            <div class="ps-text-box-body">
+                                <textarea id="canvasTextInput" class="ps-text-area" placeholder="اكتب النص هنا (يمكنك سحب هذا المربع لأي مكان على الصورة)...">VisionCraft Studio</textarea>
+                            </div>
+                            <div class="ps-text-box-footer">
+                                <div class="ps-text-prop">
+                                    <span>الحجم:</span>
+                                    <input type="number" id="canvasTextSize" class="ps-input ps-input-num" min="10" max="180" value="42" style="width:48px; font-size:11px;">
+                                </div>
+                                <div class="ps-text-prop">
+                                    <span>اللون:</span>
+                                    <input type="color" id="canvasTextColor" value="#ffffff" style="width:24px; height:20px; border:none; padding:0; background:transparent; cursor:pointer;">
+                                </div>
+                                <div class="ps-text-prop">
+                                    <span>الخط:</span>
+                                    <select id="canvasTextFont" class="ps-select" style="width:80px; font-size:11px;">
+                                        <option value="tahoma">Tahoma</option>
+                                        <option value="segoe">Segoe UI</option>
+                                        <option value="arial">Arial</option>
+                                        <option value="impact">Impact</option>
+                                    </select>
+                                </div>
+                                <button type="button" class="ps-btn ps-btn-accent" style="padding:2px 10px; font-size:11px; margin-left:auto;" onclick="app.applyTextToImage()">تطبيق (Apply)</button>
                             </div>
                         </div>
 
@@ -639,11 +680,10 @@
         <!-- RIGHT DOCKABLE PANELS -->
         <div class="ps-dock">
             
-            <!-- GROUP 1: HISTOGRAM -->
+            <!-- GROUP 1: HISTOGRAM & PALETTE -->
             <div class="ps-panel-group">
                 <div class="ps-panel-tabs">
-                    <div class="ps-ptab active">Histogram</div>
-                    <div class="ps-ptab">Color Swatches</div>
+                    <div class="ps-ptab active">📊 Histogram & Dominant Palette</div>
                 </div>
                 <div class="ps-panel-body">
                     <div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa;">
@@ -677,29 +717,13 @@
             <!-- GROUP 2: PROPERTIES (FILTER PARAMETERS) -->
             <div class="ps-panel-group" style="max-height: 250px; overflow-y: auto;">
                 <div class="ps-panel-tabs">
-                    <div class="ps-ptab active">Properties (Filter Settings)</div>
-                    <div class="ps-ptab">Math Formula</div>
+                    <div class="ps-ptab active">⚙️ Properties & Formula</div>
                 </div>
                 <div class="ps-panel-body">
                     <div id="dynamicControls">
-                        <!-- Dynamic Sliders for currently active filter -->
-                        <div class="ps-prop-row">
-                            <span>High Threshold (T2):</span>
-                            <span id="val_t2" style="color:#fff; font-family:'Fira Code'; font-weight:700;">150</span>
+                        <div style="color:#888; font-size:11px; padding:10px 0; text-align:center;">
+                            🖼️ الصورة الأصلية (بدون فلاتر).<br>اختر أي فلتر أو أداة من شريط الأدوات أو القوائم لتطبيقه.
                         </div>
-                        <input type="range" class="ps-range" min="0" max="255" value="150" data-param="t2">
-
-                        <div class="ps-prop-row">
-                            <span>Low Threshold (T1):</span>
-                            <span id="val_t1" style="color:#fff; font-family:'Fira Code'; font-weight:700;">50</span>
-                        </div>
-                        <input type="range" class="ps-range" min="0" max="255" value="50" data-param="t1">
-
-                        <div class="ps-prop-row">
-                            <span>Gaussian Sigma (σ):</span>
-                            <span id="val_sigma" style="color:#fff; font-family:'Fira Code'; font-weight:700;">1.4</span>
-                        </div>
-                        <input type="range" class="ps-range" min="0.2" max="4.0" step="0.1" value="1.4" data-param="sigma">
                     </div>
 
                     <!-- LaTeX Formula Box -->
@@ -713,23 +737,7 @@
             <!-- GROUP 3: LAYERS PANEL -->
             <div class="ps-layers-panel">
                 <div class="ps-panel-tabs">
-                    <div class="ps-ptab active">Layers</div>
-                    <div class="ps-ptab">Channels</div>
-                    <div class="ps-ptab">Code Snippet</div>
-                </div>
-
-                <div class="ps-layer-controls-top">
-                    <div style="display:flex; align-items:center; gap:6px;">
-                        <select class="ps-select" style="font-size:10px;">
-                            <option>Normal</option>
-                            <option>Screen</option>
-                            <option>Difference</option>
-                        </select>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:4px;">
-                        <span>Opacity:</span>
-                        <input type="text" class="ps-input" style="width:36px; text-align:center; font-size:10px;" value="100%">
-                    </div>
+                    <div class="ps-ptab active">📑 Layers & Python Code</div>
                 </div>
 
                 <!-- Layers Stack -->
@@ -756,23 +764,12 @@
                 </div>
 
                 <!-- Python Code Preview Drawer -->
-                <div style="background:#141414; border-top:1px solid #222; padding:6px 10px; max-height:85px; overflow-y:auto;">
-                    <div style="display:flex; justify-content:space-between; font-size:9px; color:#888; margin-bottom:3px;">
-                        <span>Generated Python Code:</span>
-                        <span style="color:#1473e6; cursor:pointer;" onclick="app.copyPythonCode()">Copy</span>
+                <div style="background:#141414; border-top:1px solid #222; padding:8px 10px; max-height:120px; overflow-y:auto;">
+                    <div style="display:flex; justify-content:space-between; font-size:9.5px; color:#888; margin-bottom:4px;">
+                        <span>🐍 Generated Python Code:</span>
+                        <span style="color:#00e5ff; cursor:pointer; font-weight:600;" onclick="app.copyPythonCode()">📋 Copy Code</span>
                     </div>
-                    <pre id="codeSnippet" style="font-family:'Fira Code'; font-size:9px; color:#a7f3d0; margin:0; line-height:1.3;"></pre>
-                </div>
-
-                <!-- Photoshop Footer Icons -->
-                <div class="ps-layers-footer">
-                    <span class="ps-footer-icon" title="Link Layers">🔗</span>
-                    <span class="ps-footer-icon" title="Add Layer Effect">fx</span>
-                    <span class="ps-footer-icon" title="Add Layer Mask">⯀</span>
-                    <span class="ps-footer-icon" title="Create Adjustment Layer">◐</span>
-                    <span class="ps-footer-icon" title="New Group">📁</span>
-                    <span class="ps-footer-icon" title="New Layer" style="font-weight:bold;">+</span>
-                    <span class="ps-footer-icon" title="Delete Layer">🗑</span>
+                    <pre id="codeSnippet" style="font-family:'Fira Code'; font-size:9.5px; color:#a7f3d0; margin:0; line-height:1.35;"></pre>
                 </div>
             </div>
 
@@ -1235,8 +1232,10 @@
                     <div class="ps-shortcut-title">File & History Operations</div>
                     <div class="ps-shortcut-row"><span>Open Local Image</span><span class="ps-kbd">Ctrl + O</span></div>
                     <div class="ps-shortcut-row"><span>Export Image (PNG)</span><span class="ps-kbd">Ctrl + S</span></div>
+                    <div class="ps-shortcut-row"><span>Undo (تراجع عن العملية)</span><span class="ps-kbd">Ctrl + Z</span></div>
+                    <div class="ps-shortcut-row"><span>Redo (إعادة العملية)</span><span class="ps-kbd">Ctrl + Y</span> / <span class="ps-kbd">Ctrl + Shift + Z</span></div>
                     <div class="ps-shortcut-row"><span>Copy Python Code</span><span class="ps-kbd">Ctrl + C</span></div>
-                    <div class="ps-shortcut-row"><span>Undo / Revert to Original</span><span class="ps-kbd">Ctrl + Z</span> / <span class="ps-kbd">F12</span></div>
+                    <div class="ps-shortcut-row"><span>Revert to Original</span><span class="ps-kbd">F12</span></div>
                 </div>
 
                 <!-- Section: Digital Image Processing Superpowers -->
