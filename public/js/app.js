@@ -284,9 +284,13 @@ class PhotoshopApp {
             this.showToast(`${label} placed. Drag or scale to fit!`, "✨");
         };
         img.onerror = () => {
-            this.showToast("Failed to load accessory image.", "❌");
+            if (!img.src.startsWith("/")) {
+                img.src = `/accessories/${filename}`;
+            } else {
+                this.showToast("Failed to load accessory image.", "❌");
+            }
         };
-        img.src = `accessories/${filename}`;
+        img.src = `/accessories/${filename}`;
     }
 
     initEvents() {
@@ -966,9 +970,13 @@ class PhotoshopApp {
             this.applyCurrentFilter();
         };
         img.onerror = () => {
-            this.showToast(`تعذر تحميل صورة العينة: ${filename}`, "❌");
+            if (!img.src.startsWith("/")) {
+                img.src = `/samples/${filename}`;
+            } else {
+                this.showToast(`تعذر تحميل صورة العينة: ${filename}`, "❌");
+            }
         };
-        img.src = `samples/${filename}`;
+        img.src = `/samples/${filename}`;
     }
 
     handleFileUpload(e) {
